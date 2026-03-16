@@ -1,4 +1,4 @@
-run = "tsx ./server/index.ts"
+run = "npm run dev"
 entrypoint = "index.ts"
 hidden = [".config", "package-lock.json", "tsconfig.json"]
 modules = ["nodejs-20"]
@@ -17,7 +17,15 @@ ignorePorts = false
 
 [[ports]]
 localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 5173
 externalPort = 80
+
+[[ports]]
+localPort = 24678
+externalPort = 3001
 
 [agent]
 expertMode = true
