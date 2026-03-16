@@ -5,7 +5,7 @@ import { appRouter } from "./trpc/router";
 import { createContext } from "./trpc/context";
 
 const app = express();
-
+console.log("SERVER BOOTED")
 app.use(
   "/trpc",
   trpcExpress.createExpressMiddleware({

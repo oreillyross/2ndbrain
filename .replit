@@ -1,4 +1,4 @@
-run = "tsx index.ts"
+run = "tsx ./server/index.ts"
 entrypoint = "index.ts"
 hidden = [".config", "package-lock.json", "tsconfig.json"]
 modules = ["nodejs-20"]
