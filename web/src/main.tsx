@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
+import "./index.css"
 import { trpc, trpcClient } from "./lib/trpc";
 import App from "./App";
 
