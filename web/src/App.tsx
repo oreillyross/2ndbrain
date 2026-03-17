@@ -1,27 +1,19 @@
-import {trpc} from "./lib/trpc"
+import { Route, Switch, Link } from "wouter";
+import CreateNote from "./pages/CreateNote";
+import NotesList from "./pages/NotesList";
 
-function App() {
-  
-   const { data, isLoading } = trpc.health.ping.useQuery();
-  
-  if (isLoading) return <div>Loading...</div>;
-  
+export default function App() {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <div>
-            <h1 className='text-3xl text-blue-600'>tRPC test</h1>
-            <pre>{JSON.stringify(data, null, 2)}</pre>
-          </div>
-         
-        </div>
-      </section>
+    <div>
+      <nav className="p-4 flex gap-4">
+        <Link href="/">Notes</Link>
+        <Link href="/notes/create">New</Link>
+      </nav>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <Switch>
+        <Route path="/" component={NotesList} />
+        <Route path="/notes/create" component={CreateNote} />
+      </Switch>
+    </div>
+  );
 }
-
-export default App

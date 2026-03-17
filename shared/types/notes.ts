@@ -1,0 +1,1 @@
+export type {Note} from "../../server/db/schema/notes"
