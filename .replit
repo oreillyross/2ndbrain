@@ -1,31 +1,15 @@
 run = "npm run dev"
-entrypoint = "index.ts"
-hidden = [".config", "package-lock.json", "tsconfig.json"]
+
 modules = ["nodejs-20"]
 
-[nix]
-channel = "stable-24_05"
-packages = ["tree"]
 
-[gitHubImport]
-requiredFiles = [".replit", "replit.nix", ".config"]
-
-[deployment]
-run = ["tsx", "index.ts"]
-deploymentTarget = "cloudrun"
-ignorePorts = false
-
-[[ports]]
-localPort = 3000
-externalPort = 3000
 
 [[ports]]
 localPort = 5173
 externalPort = 80
 
 [[ports]]
-localPort = 24678
-externalPort = 3001
-
+localPort = 3000
+externalPort = 3000
 [agent]
 expertMode = true
