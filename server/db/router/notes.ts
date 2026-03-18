@@ -1,23 +1,29 @@
 import { router, publicProcedure } from "../../trpc";
 import { z } from "zod";
-import { db } from "../";
 import { notes } from "../schema";
 import { randomUUID } from "crypto";
 
 export const notesRouter = router({
-  list: publicProcedure.query(async () => {
-    return await db.select().from(notes);
+  list: publicProcedure.query(async ({ctx}) => {
+    try {
+      
+    return await ctx.db.select().from(notes);
+    } catch (err) {
+      console.error("notesRouter.list", err)
+      throw err
+    }
+     
   }),
 
   create: publicProcedure
     .input(z.object({ content: z.string() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const note = {
         id: randomUUID(),
         content: input.content,
       };
 
-      await db.insert(notes).values(note);
+      await ctx.db.insert(notes).values(note);
 
       return note;
     }),
