@@ -17,7 +17,7 @@ return (
 
       {notes.map((n: any) => (
         <div key={n.id} className="border p-2">
-          <NoteCard note={n} onDelete={(id) => deleteNote.mutate({id})} onEdit={() => console.log("edit note")}/>
+          <NoteCard note={n} onDelete={(id) => deleteNote.mutate({id})} onView={() => console.log("edit note")}/>
         </div>
       ))}
     </div>

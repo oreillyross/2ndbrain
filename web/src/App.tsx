@@ -2,6 +2,7 @@ import { Route, Switch, Link } from "wouter";
 import CreateNote from "./pages/CreateNote";
 import NotesList from "./pages/NotesList";
 import SearchScreen from "./pages/SearchScreen";
+import SingleNote from "./pages/SingleNote";
 
 export default function App() {
   return (
@@ -16,6 +17,8 @@ export default function App() {
       <Switch>
         <Route path="/" component={NotesList} />
         <Route path="/notes/create" component={CreateNote} />
+        <Route path="/note/:id" component={SingleNote} />
+        
       </Switch>
     </div>
   );

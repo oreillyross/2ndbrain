@@ -10,7 +10,7 @@ export default function SearchScreen() {
       { enabled: query.length > 0 }
     );
 
-  console.log(results)
+  
   return (
     <div className="p-4 max-w-xl mx-auto">
       <input
