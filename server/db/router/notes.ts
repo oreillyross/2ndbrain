@@ -2,6 +2,7 @@ import { router, publicProcedure } from "../../trpc";
 import { z } from "zod";
 import { notes } from "../schema";
 import { randomUUID } from "crypto";
+import {sql} from "drizzle-orm"
 
 export const notesRouter = router({
   list: publicProcedure.query(async ({ctx}) => {
@@ -27,4 +28,20 @@ export const notesRouter = router({
 
       return note;
     }),
+  search: publicProcedure
+  .input(z.object({ query: z.string() }))
+  .query(async ({ ctx, input }) => {
+    if (!input.query.trim()) return [];
+
+    return ctx.db
+      .select()
+      .from(notes)
+      .where(
+        sql`search_vector @@ plainto_tsquery('english', ${input.query})`
+      )
+      .orderBy(
+        sql`ts_rank(search_vector, plainto_tsquery('english', ${input.query})) DESC`
+      )
+      .limit(20);
+  }),
 });

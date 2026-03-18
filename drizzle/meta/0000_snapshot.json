@@ -1,5 +1,5 @@
 {
-  "id": "e2f77959-f50e-43fc-97b5-69c05f9ee906",
+  "id": "09e9cfe4-f834-4bd6-b71a-e1622ade8188",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -39,7 +39,7 @@
           "name": "search_vector",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         }
       },
       "indexes": {},

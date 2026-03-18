@@ -10,7 +10,7 @@ export const notes = pgTable("notes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 
-  searchVector: text("search_vector") 
+  searchVector: text("search_vector").$type<string>().notNull().default(""), 
 });
 
 
