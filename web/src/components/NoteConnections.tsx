@@ -80,9 +80,9 @@ export function NoteConnections({ noteId }: { noteId: string }) {
             <div
               key={l.id}
               onClick={() => navigate(`/note/${l.toNoteId}`)}
-              className="group flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm max-w-[140px] truncate cursor-pointer hover:scale-105 hover:shadow transition"
+              className="group flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm max-w-[140px] cursor-pointer hover:scale-105 hover:shadow transition"
             >
-              <span className="truncate">{l.toTitle}</span>
+              <span className="truncate flex-1">{l.toTitle}</span>
 
               <button
                 onClick={(e) => {
