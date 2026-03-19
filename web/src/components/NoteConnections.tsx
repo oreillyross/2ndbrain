@@ -80,12 +80,16 @@ export function NoteConnections({ noteId }: { noteId: string }) {
             <div
               key={l.id}
               onClick={() => navigate(`/note/${l.toNoteId}`)}
-              className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm max-w-[120px] truncate cursor-pointer hover:scale-105 hover:shadow transition"
+              className="group flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm max-w-[140px] truncate cursor-pointer hover:scale-105 hover:shadow transition"
             >
-              {l.toTitle}
+              <span className="truncate">{l.toTitle}</span>
+
               <button
-                onClick={() => deleteLink.mutate({ id: l.id })}
-                className="absolute -top-1 -right-1 hidden group-hover:block text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteLink.mutate({ id: l.id });
+                }}
+                className="ml-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 ✕
               </button>
