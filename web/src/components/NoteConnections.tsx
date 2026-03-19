@@ -31,6 +31,13 @@ export function NoteConnections({ noteId }: { noteId: string }) {
     },
   });
 
+  const deleteLink = trpc.links.delete.useMutation({
+    onSuccess: () => {
+      utils.links.getLinked.invalidate({ noteId });
+      utils.links.getBacklinks.invalidate({ noteId });
+    },
+  });
+
   const linkedIds = new Set(links.map((l) => l.toNoteId));
 
   const filteredResults = results.filter(
@@ -76,6 +83,12 @@ export function NoteConnections({ noteId }: { noteId: string }) {
               className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm max-w-[120px] truncate cursor-pointer hover:scale-105 hover:shadow transition"
             >
               {l.toTitle}
+              <button
+                onClick={() => deleteLink.mutate({ id: l.id })}
+                className="absolute -top-1 -right-1 hidden group-hover:block text-xs"
+              >
+                ✕
+              </button>
             </div>
           ))}
 

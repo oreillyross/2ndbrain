@@ -5,7 +5,7 @@ export function useKeyboardList<T>(items: T[]) {
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [items]);
+  }, [items.length]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {

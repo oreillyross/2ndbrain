@@ -27,6 +27,13 @@ export const linksRouter = router({
       .from(links)
       .where(eq(links.fromNoteId, input.noteId));
   }),
+  delete: publicProcedure
+  .input(z.object({ id: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    await ctx.db
+      .delete(links)
+      .where(eq(links.id, input.id));
+  }),
   getBacklinks: publicProcedure
   .input(z.object({ noteId: z.string() }))
   .query(async ({ ctx, input }) => {
