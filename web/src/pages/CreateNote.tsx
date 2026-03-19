@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { trpc } from "../lib/trpc";
 import type { Note } from "../../../shared";
 import { useLocation } from "wouter";
+import { useKeyboardList } from "../lib/useKeyboardList";
 
 export default function CreateNote() {
   const [title, setTitle] = useState("");
@@ -12,7 +13,6 @@ export default function CreateNote() {
 
   const utils = trpc.useUtils();
 
- 
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedTitle(title);
@@ -24,8 +24,11 @@ export default function CreateNote() {
   // 🔍 search existing notes
   const { data: results = [] } = trpc.notes.search.useQuery(
     { query: debouncedTitle },
-    { enabled: debouncedTitle.length > 1 }
+    { enabled: debouncedTitle.length > 1 },
   );
+  const limitedResults = results.slice(0, 5);
+
+  const { activeIndex, onKeyDown } = useKeyboardList(limitedResults);
 
   // 🧠 create note (same as before)
   const createNote = trpc.notes.create.useMutation({
@@ -73,6 +76,17 @@ export default function CreateNote() {
   }, []);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    onKeyDown(e);
+
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const selected =
+        limitedResults.length > 0 ? limitedResults[activeIndex] : null;
+      if (selected) {
+        navigate(`/note/${selected.id}`);
+        return;
+      }
+    }
     if (e.key === "Enter" && title.trim()) {
       e.preventDefault();
       createNote.mutate({ title });
@@ -95,11 +109,13 @@ export default function CreateNote() {
         {/* 🔥 Dropdown results */}
         {results.length > 0 && title.length > 1 && (
           <div className="absolute mt-2 w-full bg-white border rounded shadow text-sm z-10">
-            {results.slice(0, 5).map((note) => (
+            {limitedResults.map((note, i) => (
               <div
                 key={note.id}
                 onClick={() => navigate(`/note/${note.id}`)}
-                className="p-2 hover:bg-gray-100 cursor-pointer"
+                className={`p-2 hover:bg-gray-100 cursor-pointer ${
+                  i === activeIndex ? "bg-blue-100" : "hover:bg-gray-100"
+                }`}
               >
                 {note.title}
               </div>

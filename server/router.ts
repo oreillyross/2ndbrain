@@ -1,5 +1,6 @@
 import { router, publicProcedure } from "./trpc";
 import {notesRouter} from "./db/router"
+import {linksRouter} from "./db/router"
 
 
 export const appRouter = router({
@@ -9,6 +10,7 @@ export const appRouter = router({
     }),
   }),
 notes: notesRouter, 
+links: linksRouter,
   
 });
 

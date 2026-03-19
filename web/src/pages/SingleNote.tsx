@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { trpc } from "../lib/trpc";
 import { useParams } from "wouter";
 
+import {NoteConnections} from "../components/NoteConnections"
+
 export default function SingleNote() {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -72,6 +74,7 @@ export default function SingleNote() {
             {note.content || (
               <span className="text-gray-400 italic">No content yet...</span>
             )}
+            <NoteConnections noteId={noteId} />
           </div>
         </>
       ) : (
