@@ -1,18 +1,16 @@
-import { pgTable, text, timestamp,uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
-
 
 export const notes = pgTable("notes", {
   id: uuid("id").defaultRandom().primaryKey(),
-
-  content: text("content").notNull(),
+  title: text("title").notNull().unique(),
+  content: text("content").default(""),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 
-  searchVector: text("search_vector").$type<string>().notNull().default(""), 
+  searchVector: text("search_vector").$type<string>().notNull().default(""),
 });
-
 
 export type Note = InferSelectModel<typeof notes>;
 export type NewNote = InferInsertModel<typeof notes>;

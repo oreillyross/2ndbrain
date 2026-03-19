@@ -1,8 +1,7 @@
 import { useState } from "react";
 import type { Note } from "../../../shared";
 import { trpc } from "../lib/trpc";
-import { renderNoteContent } from "../lib/renderNoteContent";
-import { useHandleLinkClick } from "../lib/useHandleLinkClick";
+
 
 type Props = {
   note: Note;
@@ -11,7 +10,7 @@ type Props = {
 };
 
 export default function NoteCard({ note, onView, onDelete }: Props) {
-  const handleLinkClick = useHandleLinkClick();
+
 
   const { data: backlinks = [] } = trpc.notes.backlinks.useQuery({
     noteId: note.id,
@@ -21,10 +20,10 @@ export default function NoteCard({ note, onView, onDelete }: Props) {
 
   const MAX_LENGTH = 120;
 
-  const isLong = note.content.length > MAX_LENGTH;
+  const isLong = note.title.length > MAX_LENGTH;
   const truncated = isLong
-    ? note.content.slice(0, MAX_LENGTH) + "..."
-    : note.content;
+    ? note.title.slice(0, MAX_LENGTH) + "..."
+    : note.title;
 
   return (
     <div
@@ -34,7 +33,7 @@ export default function NoteCard({ note, onView, onDelete }: Props) {
     >
       {/* Main content */}
       <div className="text-sm whitespace-pre-wrap">
-        {renderNoteContent(truncated, handleLinkClick)}
+        {truncated}
       </div>
 
       {/* Actions */}

@@ -1,17 +1,13 @@
 import { useState, useEffect } from "react";
 import { trpc } from "../lib/trpc";
 import { useParams } from "wouter";
-import { renderNoteContent } from "../lib/renderNoteContent";
-import { useHandleLinkClick } from "../lib/useHandleLinkClick";
 
 export default function SingleNote() {
-const [isEditing, setIsEditing] = useState(false);
-  const [content, setContent] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const { id: noteId } = useParams<{ id: string }>();
 
   const utils = trpc.useUtils();
-  const handleLinkClick = useHandleLinkClick();
   const { data: note, isLoading } = trpc.notes.getById.useQuery({ id: noteId });
 
   const updateNote = trpc.notes.update.useMutation({
@@ -21,13 +17,31 @@ const [isEditing, setIsEditing] = useState(false);
     },
   });
 
+  // 🔥 unified form state
+  const [form, setForm] = useState({
+    title: "",
+    content: "",
+  });
+
+  // 🔥 atomic update helper
+  const updateField = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
   // sync when note loads
   useEffect(() => {
-    if (note) setContent(note.content);
+    if (note) {
+      setForm({
+        title: note.title,
+        content: note.content ?? "",
+      });
+    }
   }, [note]);
 
   if (isLoading) return <div>Loading...</div>;
   if (!note) return <div>Note not found</div>;
+
+  const formatDate = (d: Date | string) => new Date(d).toLocaleString();
 
   return (
     <div className="p-6 max-w-xl mx-auto space-y-4">
@@ -50,20 +64,39 @@ const [isEditing, setIsEditing] = useState(false);
         )}
       </div>
 
-      {/* VIEW MODE */}
-      {!isEditing && (
-        <div className="whitespace-pre-wrap text-sm">
-          {renderNoteContent(note.content, handleLinkClick)}
-        </div>
+      {/* Title */}
+      {!isEditing ? (
+        <>
+          <div className="text-lg font-semibold">{note.title}</div>
+          <div className="whitespace-pre-wrap text-sm text-gray-800">
+            {note.content || (
+              <span className="text-gray-400 italic">No content yet...</span>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <input
+            value={form.title}
+            onChange={(e) => updateField("title", e.target.value)}
+            className="w-full text-lg font-semibold border-b outline-none"
+            autoFocus
+          />
+        </>
       )}
 
-      {/* EDIT MODE */}
+      {/* Dates */}
+      <div className="text-xs text-gray-400 space-x-4">
+        <span>Created: {formatDate(note.createdAt)}</span>
+        <span>Updated: {formatDate(note.updatedAt)}</span>
+      </div>
+
+      {/* Content */}
       {isEditing && (
         <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full h-64 border p-3 text-sm"
-          autoFocus
+          value={form.content}
+          onChange={(e) => updateField("content", e.target.value)}
+          className="w-full h-40 border p-3 text-sm"
         />
       )}
 
@@ -74,7 +107,8 @@ const [isEditing, setIsEditing] = useState(false);
             onClick={() => {
               updateNote.mutate({
                 id: note.id,
-                content,
+                title: form.title,
+                content: form.content,
               });
               setIsEditing(false);
             }}
@@ -85,7 +119,11 @@ const [isEditing, setIsEditing] = useState(false);
 
           <button
             onClick={() => {
-              setContent(note.content);
+              // 🔥 reset form correctly
+              setForm({
+                title: note.title,
+                content: note.content ?? "",
+              });
               setIsEditing(false);
             }}
             className="text-gray-500 text-sm"

@@ -1,6 +1,6 @@
 import { Route, Switch, Link } from "wouter";
-import CreateNote from "./pages/CreateNote";
-import NotesList from "./pages/NotesList";
+
+import Home from "./pages/Home";
 import SearchScreen from "./pages/SearchScreen";
 import SingleNote from "./pages/SingleNote";
 
@@ -9,14 +9,14 @@ export default function App() {
     <div>
       <nav className="p-4 flex gap-4">
         <Link href="/">Notes</Link>
-        <Link href="/notes/create">New</Link>
+       
       </nav>
-      <SearchScreen/>
+    
      
 
       <Switch>
-        <Route path="/" component={NotesList} />
-        <Route path="/notes/create" component={CreateNote} />
+        <Route path="/" component={Home} />
+        
         <Route path="/note/:id" component={SingleNote} />
         
       </Switch>
