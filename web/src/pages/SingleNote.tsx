@@ -1,49 +1,131 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { trpc } from "../lib/trpc";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 
-import {NoteConnections} from "../components/NoteConnections"
+import { NoteConnections } from "../components/NoteConnections";
 
 export default function SingleNote() {
-  const [isEditing, setIsEditing] = useState(false);
+  const initialEditingState = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("edit") === "true";
+  };
+  const hasHydrated = useRef(false);
+  const lastSaved = useRef("");
+  const contentRef = useRef<HTMLTextAreaElement | null>(null);
 
   const { id: noteId } = useParams<{ id: string }>();
 
   const utils = trpc.useUtils();
   const { data: note, isLoading } = trpc.notes.getById.useQuery({ id: noteId });
 
+  const [location] = useLocation();
+  const formatDate = (d: Date | string) => new Date(d).toLocaleString();
+
+  const [content, setContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [debouncedContent, setDebouncedContent] = useState(content);
+  const [isEditing, setIsEditing] = useState<boolean>(initialEditingState);
+
   const updateNote = trpc.notes.update.useMutation({
-    onSuccess: () => {
-      utils.notes.getById.invalidate({ id: noteId });
+    onSuccess: (updatedNote) => {
+      utils.notes.getById.setData({ id: noteId }, updatedNote);
       utils.notes.list.invalidate();
     },
   });
 
-  // 🔥 unified form state
-  const [form, setForm] = useState({
-    title: "",
-    content: "",
-  });
+  const [showSaved, setShowSaved] = useState(false);
 
-  // 🔥 atomic update helper
-  const updateField = (field: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  // sync when note loads
   useEffect(() => {
-    if (note) {
-      setForm({
-        title: note.title,
-        content: note.content ?? "",
-      });
+    if (note && !hasHydrated.current) {
+      setContent(note.content ?? "");
+      setTitle(note.title);
+      hasHydrated.current = true;
     }
   }, [note]);
+  
+  // Debounce content changes to avoid firing updates on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedContent(content);
+    }, 1000);
+
+    return () => clearTimeout(t);
+  }, [content]);
+
+  // Sync edit mode with URL query (?edit=true) when location changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("edit") === "true") {
+      setIsEditing(true);
+    }
+  }, [location]);
+
+  // Load note content into state when viewing (but don't overwrite while editing)
+  useEffect(() => {
+    if (note && !isEditing) {
+      setContent(note.content ?? "");
+      setTitle(note.title);
+    }
+  }, [note, isEditing]);
+
+  // Auto-save note when debounced content changes and differs from server state
+  useEffect(() => {
+    if (updateNote.isSuccess) {
+      setShowSaved(true);
+      const t = setTimeout(() => setShowSaved(false), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [updateNote.isSuccess]);
+
+  // Initialize local state when note is first loaded (title + content)
+  useEffect(() => {
+    if (!isEditing) return;
+    if (!note) return;
+
+    if (debouncedContent === note.content && title === note.title) return;
+
+    if (debouncedContent === lastSaved.current) return;
+    lastSaved.current = debouncedContent
+
+    updateNote.mutate({
+      title,
+      id: noteId,
+      content: debouncedContent,
+    });
+  }, [debouncedContent, note, title, isEditing]);
+
+  useEffect(() => {
+    if (note) {
+      setContent(note.content ?? "");
+      setTitle(note.title);
+      // setForm({
+      //   title: note.title,
+      //   content: note.content ?? "",
+      // });
+    }
+  }, [note]);
+
+  useLayoutEffect(() => {
+    if (isEditing && contentRef.current) {
+      contentRef.current.focus();
+      const el = contentRef.current;
+      const l = el.value.length;
+      el.setSelectionRange(l, l);
+    }
+  }, [isEditing, note]);
 
   if (isLoading) return <div>Loading...</div>;
   if (!note) return <div>Note not found</div>;
 
-  const formatDate = (d: Date | string) => new Date(d).toLocaleString();
+  // const [form, setForm] = useState({
+  //   title: "",
+  //   content: "",
+  // });
+
+  // const updateField = (field: keyof typeof form, value: string) => {
+  //   setForm((prev) => ({ ...prev, [field]: value }));
+  // };
 
   return (
     <div className="p-6 max-w-xl mx-auto space-y-4">
@@ -55,6 +137,10 @@ export default function SingleNote() {
         >
           ← Back
         </button>
+        <div className="text-xs text-gray-500 mt-1">
+          {updateNote.isPending && "Saving..."}
+          {showSaved && "✓ Saved"}
+        </div>
 
         {!isEditing && (
           <button
@@ -80,8 +166,8 @@ export default function SingleNote() {
       ) : (
         <>
           <input
-            value={form.title}
-            onChange={(e) => updateField("title", e.target.value)}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
             className="w-full text-lg font-semibold border-b outline-none"
             autoFocus
           />
@@ -97,8 +183,9 @@ export default function SingleNote() {
       {/* Content */}
       {isEditing && (
         <textarea
-          value={form.content}
-          onChange={(e) => updateField("content", e.target.value)}
+          ref={contentRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
           className="w-full h-40 border p-3 text-sm"
         />
       )}
@@ -110,8 +197,8 @@ export default function SingleNote() {
             onClick={() => {
               updateNote.mutate({
                 id: note.id,
-                title: form.title,
-                content: form.content,
+                title: title,
+                content: content,
               });
               setIsEditing(false);
             }}
@@ -123,11 +210,9 @@ export default function SingleNote() {
           <button
             onClick={() => {
               // 🔥 reset form correctly
-              setForm({
-                title: note.title,
-                content: note.content ?? "",
-              });
-              setIsEditing(false);
+              (setTitle(note.title),
+                setContent(note.content ?? ""),
+                setIsEditing(false));
             }}
             className="text-gray-500 text-sm"
           >

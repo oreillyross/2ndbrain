@@ -19,7 +19,13 @@ export function NoteConnections({ noteId }: { noteId: string }) {
     { enabled: query.length > 0 },
   );
 
-  const { activeIndex, setActiveIndex, onKeyDown } = useKeyboardList(results);
+  const exactMatch = results.find(
+    (r) => r.title.toLowerCase() === query.toLowerCase(),
+  );
+
+  const shouldShowCreate = query.length > 0 && !exactMatch;
+
+
 
   const createLink = trpc.links.create.useMutation({
     onSuccess: () => {
@@ -44,9 +50,34 @@ export function NoteConnections({ noteId }: { noteId: string }) {
     (r) => r.id !== noteId && !linkedIds.has(r.id),
   );
 
+  const { activeIndex, setActiveIndex, onKeyDown } = useKeyboardList(filteredResults);
+  
   useEffect(() => {
     setActiveIndex(0);
   }, [query]);
+
+  const createNote = trpc.notes.create.useMutation();
+
+  async function handleCreate() {
+    // 1. create note
+    const newNote = await createNote.mutateAsync({
+      title: query,
+    });
+
+    // 2. link it
+    await createLink.mutateAsync({
+      fromId: noteId,
+      toId: newNote.id,
+      toTitle: query,
+    });
+
+    // 3. navigate
+    navigate(`/note/${newNote.id}?edit=true`);
+
+    // 4. reset UI
+    setQuery("");
+    setOpen(false);
+  }
 
   return (
     <div className="mt-6 space-y-4">
@@ -118,13 +149,17 @@ export function NoteConnections({ noteId }: { noteId: string }) {
                     e.preventDefault();
 
                     const selected = filteredResults[activeIndex];
-                    if (!selected) return;
-
+                    if (selected) {
+                      
                     createLink.mutate({
                       fromId: noteId,
                       toId: selected.id,
                       toTitle: selected.title,
-                    });
+                    }) 
+                    } else if (shouldShowCreate) {
+                      handleCreate()
+                    } 
+
                   }
 
                   if (e.key === "Escape") {
@@ -137,8 +172,7 @@ export function NoteConnections({ noteId }: { noteId: string }) {
                 className="px-3 py-2 ml-2 border rounded  text-sm"
               />
 
-              {results.filter((r) => r.id !== noteId && !linkedIds.has(r.id))
-                .length > 0 && (
+              {(filteredResults.length > 0 || shouldShowCreate) && (
                 <div className="absolute top-10 left-0 bg-white border rounded shadow w-48 z-10">
                   {filteredResults.map((r, i) => (
                     <div
@@ -157,6 +191,14 @@ export function NoteConnections({ noteId }: { noteId: string }) {
                       {r.title}
                     </div>
                   ))}
+                  {shouldShowCreate && (
+                    <div
+                      className="px-3 py-2 text-sm text-blue-600 cursor-pointer hover:bg-gray-100"
+                      onClick={handleCreate}
+                    >
+                      ➕ Create "{query}"
+                    </div>
+                  )}
                 </div>
               )}
             </div>
