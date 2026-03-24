@@ -1,6 +1,7 @@
 import { router, publicProcedure } from "./trpc";
-import {notesRouter} from "./db/router"
-import {linksRouter} from "./db/router"
+import { notesRouter } from "./db/router";
+import { linksRouter } from "./db/router";
+import { authRouter } from "./db/router";
 
 
 export const appRouter = router({
@@ -9,8 +10,9 @@ export const appRouter = router({
       return { status: "ok" };
     }),
   }),
-notes: notesRouter, 
-links: linksRouter,
+  notes: notesRouter,
+  links: linksRouter,
+  auth: authRouter,
   
 });
 

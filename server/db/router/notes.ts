@@ -1,29 +1,31 @@
-import { router, publicProcedure } from "../../trpc";
+import { router, publicProcedure, protectedProcedure } from "../../trpc";
 import { z } from "zod";
 import { links, notes } from "../schema";
 
 import { sql, eq } from "drizzle-orm";
 
 export const notesRouter = router({
-  list: publicProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     try {
-      return await ctx.db.select().from(notes);
+      return await ctx.db.query.notes.findMany({
+        where: eq(notes.userId, ctx.user.id),
+      });
     } catch (err) {
       console.error("notesRouter.list", err);
       throw err;
     }
   }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(z.object({ title: z.string() }))
     .mutation(async ({ input, ctx }) => {
       // 1. create note
       try {
         const [note] = await ctx.db
           .insert(notes)
-          .values({ title: input.title })
+          .values({ title: input.title, userId: ctx.user.id })
           .returning();
-      
+
         return note;
       } catch (err) {
         console.log("notes.create", err);

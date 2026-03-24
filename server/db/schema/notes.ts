@@ -5,7 +5,7 @@ export const notes = pgTable("notes", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: text("title").notNull().unique(),
   content: text("content").default(""),
-
+  userId: uuid("user_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 

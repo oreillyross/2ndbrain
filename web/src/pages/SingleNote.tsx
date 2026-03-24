@@ -204,20 +204,10 @@ export default function SingleNote() {
             }}
             className="text-green-600 text-sm"
           >
-            Save
+            Done
           </button>
 
-          <button
-            onClick={() => {
-              // 🔥 reset form correctly
-              (setTitle(note.title),
-                setContent(note.content ?? ""),
-                setIsEditing(false));
-            }}
-            className="text-gray-500 text-sm"
-          >
-            Cancel
-          </button>
+       
         </div>
       )}
     </div>
