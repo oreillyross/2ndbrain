@@ -19,7 +19,7 @@ export const themesRouter = router({
       return theme;
     }),
 
-  list: protectedProcedure.query(async () => {
+  list: protectedProcedure.query(async ({ctx}) => {
     const result = await db
       .select({
         id: themes.id,
@@ -33,6 +33,7 @@ export const themesRouter = router({
       })
       .from(themes)
       .leftJoin(notes, eq(notes.themeId, themes.id))
+      .where(eq(themes.userId, ctx.user.id))
       .groupBy(themes.id);
 
     return result;
