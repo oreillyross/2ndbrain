@@ -8,6 +8,20 @@
       "when": 1774357276587,
       "tag": "0000_worthless_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774432352951,
+      "tag": "0001_cynical_turbo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774444580909,
+      "tag": "0002_lowly_miracleman",
+      "breakpoints": true
     }
   ]
 }

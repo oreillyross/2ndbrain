@@ -38,6 +38,7 @@ export const notesRouter = router({
         id: z.string().uuid(),
         title: z.string(),
         content: z.string(),
+        themeId: z.string().nullable,
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -55,51 +56,57 @@ export const notesRouter = router({
     }),
 
   search: protectedProcedure
-  .input(z.object({ query: z.string() }))
-  .query(async ({ ctx, input }) => {
-    const query = input.query.trim();
-    if (!query) return [];
+    .input(z.object({ query: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const query = input.query.trim();
+      if (!query) return [];
 
-    return ctx.db
-      .select()
-      .from(notes)
-      .where(sql`
+      return ctx.db
+        .select()
+        .from(notes)
+        .where(
+          sql`
         ${notes.userId} = ${ctx.user.id}
         AND search_vector @@ plainto_tsquery('english', ${query})
-      `)
-      .orderBy(
-        sql`ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC`
-      )
-      .limit(20);
-  }),
+      `,
+        )
+        .orderBy(
+          sql`ts_rank(search_vector, plainto_tsquery('english', ${query})) DESC`,
+        )
+        .limit(20);
+    }),
   getById: protectedProcedure
-  .input(z.object({ id: z.string().uuid() }))
-  .query(async ({ input, ctx }) => {
-    const result = await ctx.db
-      .select()
-      .from(notes)
-      .where(sql`
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .select()
+        .from(notes)
+        .where(
+          sql`
         ${notes.id} = ${input.id}
         AND ${notes.userId} = ${ctx.user.id}
-      `)
-      .limit(1);
+      `,
+        )
+        .limit(1);
 
-    return result[0] ?? null;
-  }),
+      return result[0] ?? null;
+    }),
   getByTitle: protectedProcedure
-  .input(z.object({ title: z.string() }))
-  .query(async ({ input, ctx }) => {
-    const result = await ctx.db
-      .select()
-      .from(notes)
-      .where(sql`
+    .input(z.object({ title: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const result = await ctx.db
+        .select()
+        .from(notes)
+        .where(
+          sql`
         ${notes.title} = ${input.title}
         AND ${notes.userId} = ${ctx.user.id}
-      `)
-      .limit(1);
+      `,
+        )
+        .limit(1);
 
-    return result[0] ?? null;
-  }),
+      return result[0] ?? null;
+    }),
   delete: publicProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ input, ctx }) => {
@@ -115,5 +122,21 @@ export const notesRouter = router({
         .select()
         .from(links)
         .where(eq(links.toNoteId, input.noteId));
+    }),
+  assignTheme: protectedProcedure
+    .input(
+      z.object({
+        noteId: z.string().uuid(),
+        themeId: z.string().uuid().nullable(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const [note] = await ctx.db
+        .update(notes)
+        .set({ themeId: input.themeId })
+        .where(eq(notes.id, input.noteId))
+        .returning();
+
+      return note;
     }),
 });

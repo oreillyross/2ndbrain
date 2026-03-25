@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { trpc } from "../lib/trpc";
 import { useParams, useLocation } from "wouter";
-
+import { ThemeInlineSelector} from "../components/ThemeInlineSelector"
 import { NoteConnections } from "../components/NoteConnections";
 
 export default function SingleNote() {
+
+
   const initialEditingState = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("edit") === "true";
@@ -17,10 +19,11 @@ export default function SingleNote() {
 
   const utils = trpc.useUtils();
   const { data: note, isLoading } = trpc.notes.getById.useQuery({ id: noteId });
-
+  const themeId = note?.themeId ?? null
+  const {data: theme} = trpc.themes.getById.useQuery({id: themeId})
   const [location] = useLocation();
   const formatDate = (d: Date | string) => new Date(d).toLocaleString();
-
+  console.log(theme)
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [debouncedContent, setDebouncedContent] = useState(content);
@@ -42,7 +45,7 @@ export default function SingleNote() {
       hasHydrated.current = true;
     }
   }, [note]);
-  
+
   // Debounce content changes to avoid firing updates on every keystroke
   useEffect(() => {
     const t = setTimeout(() => {
@@ -86,12 +89,13 @@ export default function SingleNote() {
     if (debouncedContent === note.content && title === note.title) return;
 
     if (debouncedContent === lastSaved.current) return;
-    lastSaved.current = debouncedContent
+    lastSaved.current = debouncedContent;
 
     updateNote.mutate({
       title,
       id: noteId,
       content: debouncedContent,
+      themeId: note.themeId,
     });
   }, [debouncedContent, note, title, isEditing]);
 
@@ -137,11 +141,14 @@ export default function SingleNote() {
         >
           ← Back
         </button>
-        <div className="text-xs text-gray-500 mt-1">
+        <ThemeInlineSelector
+          noteId={note.id}
+          themeId={note.themeId ?? null}
+        />
+        <div className="text-xs text-gray-500 mt-1 w-20 text-right">
           {updateNote.isPending && "Saving..."}
           {showSaved && "✓ Saved"}
         </div>
-
         {!isEditing && (
           <button
             onClick={() => setIsEditing(true)}
@@ -181,13 +188,17 @@ export default function SingleNote() {
       </div>
 
       {/* Content */}
+      
       {isEditing && (
-        <textarea
-          ref={contentRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full h-40 border p-3 text-sm"
-        />
+      <>
+          <textarea
+            ref={contentRef}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full h-40 border p-3 text-sm"
+          />
+       
+      </>
       )}
 
       {/* SAVE / CANCEL */}
@@ -196,9 +207,10 @@ export default function SingleNote() {
           <button
             onClick={() => {
               updateNote.mutate({
-                id: note.id,
-                title: title,
-                content: content,
+                 id: note.id,
+                  title,
+                  content: content ?? "",
+                  themeId: note.themeId,
               });
               setIsEditing(false);
             }}
@@ -206,8 +218,6 @@ export default function SingleNote() {
           >
             Done
           </button>
-
-       
         </div>
       )}
     </div>

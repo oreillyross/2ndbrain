@@ -1,0 +1,1 @@
+ALTER TABLE "themes" ADD COLUMN "user_id" uuid NOT NULL;

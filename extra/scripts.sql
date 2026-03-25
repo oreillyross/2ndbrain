@@ -10,3 +10,10 @@ GENERATED ALWAYS AS (
 CREATE INDEX notes_search_idx
 ON notes
 USING GIN (search_vector);
+
+ALTER TABLE notes ADD COLUMN theme_id uuid;
+ALTER TABLE notes
+ADD CONSTRAINT notes_theme_id_fkey
+FOREIGN KEY (theme_id)
+REFERENCES themes(id)
+ON DELETE SET NULL;
