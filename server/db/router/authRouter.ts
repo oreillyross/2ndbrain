@@ -1,5 +1,5 @@
 import { z } from "zod";
-import {TRPCError} from "@trpc/server"
+import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";
 import { router, publicProcedure } from "../../trpc";
 import { db } from "../";
@@ -54,27 +54,24 @@ export const authRouter = router({
   verifyMagicLink: publicProcedure
     .input(z.object({ token: z.string() }))
     .mutation(async ({ input, ctx }) => {
-  
-    
       // 1. find token
       const record = await db.query.magicTokens.findFirst({
         where: eq(magicTokens.token, input.token),
       });
-      console.log("RECORD IS:", record, "TOKEN IS:", input.token)
+      console.log("RECORD IS:", record, "TOKEN IS:", input.token);
 
       if (!record || record.expiresAt < new Date()) {
-     
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Invalid or expired token",
         });
       }
-      
+
       // 2. find or create user
       let user = await db.query.users.findFirst({
         where: eq(users.email, record.email),
       });
-      console.log("user", user)
+      console.log("user", user);
       if (!user) {
         const [newUser] = await db
           .insert(users)
@@ -103,7 +100,18 @@ export const authRouter = router({
         maxAge: 1000 * 60 * 60 * 24 * 7,
         path: "/",
       });
-      
+
       return { success: true };
     }),
+  logout: publicProcedure.mutation(({ ctx }) => {
+    ctx.res.cookie("session", "", {
+      httpOnly: true,
+      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 0, // 👈 this deletes it
+      path: "/",
+    });
+
+    return { success: true };
+  }),
 });

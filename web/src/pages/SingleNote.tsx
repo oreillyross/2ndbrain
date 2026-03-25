@@ -47,7 +47,7 @@ export default function SingleNote() {
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedContent(content);
-    }, 1000);
+    }, 600);
 
     return () => clearTimeout(t);
   }, [content]);

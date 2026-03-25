@@ -13,4 +13,5 @@ export const notes = pgTable("notes", {
 });
 
 export type Note = InferSelectModel<typeof notes>;
+export type NoteUI = Omit<typeof notes.$inferSelect, "searchVector">;
 export type NewNote = InferInsertModel<typeof notes>;

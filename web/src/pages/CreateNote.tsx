@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "../lib/trpc";
-import type { Note } from "../../../shared";
+
 import { useLocation } from "wouter";
 import { useKeyboardList } from "../lib/useKeyboardList";
+
+
 
 export default function CreateNote() {
   const [title, setTitle] = useState("");
@@ -31,7 +33,7 @@ export default function CreateNote() {
   const limitedResults = useMemo(() => results.slice(0, 5), [results]);
 
   const { activeIndex, onKeyDown } = useKeyboardList(limitedResults);
-
+  const { data: user } = trpc.auth.me.useQuery();
   // 🧠 create note
   const createNote = trpc.notes.create.useMutation({
     onMutate: async (newNote) => {
@@ -39,14 +41,14 @@ export default function CreateNote() {
 
       const prev = utils.notes.list.getData();
 
-      const optimisticNote: Note = {
+      const optimisticNote: any = {
         id: "temp-" + Date.now().toString(),
+        userId: user!.id,
         title: newNote.title,
         createdAt: new Date(),
         updatedAt: new Date(),
         content: "",
-        searchVector: "",
-      };
+              };
 
       utils.notes.list.setData(undefined, (old) => [
         optimisticNote,
@@ -125,7 +127,7 @@ export default function CreateNote() {
                 className={`p-2 cursor-pointer ${
                   i === activeIndex ? "bg-blue-100" : "hover:bg-gray-100"
                 }`}
-            >
+              >
                 {note.title}
               </div>
             ))}

@@ -5,8 +5,9 @@ import { trpc } from "./lib/trpc";
 import Home from "./pages/Home";
 import SingleNote from "./pages/SingleNote";
 import Login from "./pages/Login";
+import {AuthStatus} from "./components/AuthStatus"
 import AuthCallback from "./auth/callback";
-console.log("TRPC IMPORT:", trpc);
+
 export default function App() {
   const { data: user, isLoading } = trpc.auth.me.useQuery(undefined, {
     staleTime: 1000 * 60 * 5,
@@ -17,7 +18,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1">
-        <nav className="p-4 flex gap-4">
+        <nav className="p-4 flex items-center">
           <Link href="/">
             <div className="pt-6 pl-6">
               <div className="flex items-center gap-2 text-xl font-semibold text-gray-800 hover:opacity-80 transition">
@@ -26,10 +27,14 @@ export default function App() {
               </div>
             </div>
           </Link>
+
+          <div className="ml-auto">
+            <AuthStatus />
+          </div>
         </nav>
 
         <Switch>
-          {/* ✅ public route */}
+          
           <Route path="/auth/callback" component={AuthCallback} />
 
           {/* ✅ auth-gated routes */}
