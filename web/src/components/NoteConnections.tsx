@@ -13,7 +13,7 @@ export function NoteConnections({ noteId }: { noteId: string }) {
 
   const { data: links = [] } = trpc.links.getLinked.useQuery({ noteId });
   const { data: backlinks = [] } = trpc.links.getBacklinks.useQuery({ noteId });
-
+  console.log("links are:", links)
   const { data: results = [] } = trpc.notes.search.useQuery(
     { query },
     { enabled: query.length > 0 },
@@ -44,7 +44,7 @@ export function NoteConnections({ noteId }: { noteId: string }) {
     },
   });
 
-  const linkedIds = new Set(links.map((l) => l.toNoteId));
+  const linkedIds = new Set(links.map((l) => l.links.toNoteId));
 
   const filteredResults = results.filter(
     (r) => r.id !== noteId && !linkedIds.has(r.id),
@@ -109,16 +109,16 @@ export function NoteConnections({ noteId }: { noteId: string }) {
         <div className="flex flex-wrap gap-2 items-center">
           {links.map((l) => (
             <div
-              key={l.id}
-              onClick={() => navigate(`/note/${l.toNoteId}`)}
+              key={l.links.id}
+              onClick={() => navigate(`/note/${l.links.toNoteId}`)}
               className="group flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm max-w-[140px] cursor-pointer hover:scale-105 hover:shadow transition"
             >
-              <span className="truncate flex-1">{l.toTitle}</span>
+              <span className="truncate flex-1">{l.links.toTitle}</span>
 
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteLink.mutate({ id: l.id });
+                  deleteLink.mutate({ id: l.links.id });
                 }}
                 className="ml-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
               >
