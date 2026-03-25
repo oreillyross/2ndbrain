@@ -140,4 +140,12 @@ export const notesRouter = router({
 
       return note;
     }),
+  byTheme: publicProcedure
+    .input(z.object({ themeId: z.string().uuid() }))
+    .query(async ({ input, ctx }) => {
+      return ctx.db.query.notes.findMany({
+        where: (notes, { eq }) => eq(notes.themeId, input.themeId),
+        orderBy: (notes, { desc }) => desc(notes.updatedAt),
+      });
+    }),
 });

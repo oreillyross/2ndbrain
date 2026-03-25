@@ -7,6 +7,7 @@ import SingleNote from "./pages/SingleNote";
 import Login from "./pages/Login";
 import {AuthStatus} from "./components/AuthStatus"
 import AuthCallback from "./auth/callback";
+import { ThemeDetail } from "./pages/ThemeDetailPage";
 
 export default function App() {
   const { data: user, isLoading } = trpc.auth.me.useQuery(undefined, {
@@ -42,6 +43,7 @@ export default function App() {
           {user && (
             <>
               <Route path="/note/:id" component={SingleNote} />
+              <Route path="/theme/:id" component={ThemeDetail}/>
               <Route path="/" component={Home} />
             </>
           )}

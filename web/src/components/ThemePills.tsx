@@ -10,7 +10,7 @@ export function ThemePills() {
   const [, navigate] = useLocation();
 
   const [isOpen, setIsOpen] = useState(false)
-  
+
   return (
     <div className="flex items-center gap-2 flex-wrap mt-6">
 
@@ -18,8 +18,9 @@ export function ThemePills() {
       {themes.map((t) => (
         <button
           key={t.id}
-          onClick={() => navigate(`/themes/${t.id}`)}
-          className="px-3 py-1 text-sm rounded-full border hover:bg-gray-100 transition"
+          onClick={() => navigate(`/theme/${t.id}`)}
+         
+          className="px-3 py-1 text-sm rounded-full border hover:bg-gray-100 transition cursor-pointer"
         >
           {t.name}
         </button>
