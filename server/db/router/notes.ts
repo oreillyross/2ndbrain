@@ -38,7 +38,7 @@ export const notesRouter = router({
         id: z.string().uuid(),
         title: z.string(),
         content: z.string(),
-        themeId: z.string().nullable,
+        themeId: z.string().nullable(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -48,6 +48,7 @@ export const notesRouter = router({
           title: input.title,
           content: input.content,
           updatedAt: new Date(),
+          themeId: input.themeId ?? null,
         })
         .where(eq(notes.id, input.id))
         .returning();

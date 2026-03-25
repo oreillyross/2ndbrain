@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { trpc } from "../lib/trpc";
 import { useParams, useLocation } from "wouter";
-import { ThemeInlineSelector} from "../components/ThemeInlineSelector"
+import { ThemeInlineSelector } from "../components/ThemeInlineSelector";
 import { NoteConnections } from "../components/NoteConnections";
 
 export default function SingleNote() {
-
-
   const initialEditingState = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get("edit") === "true";
@@ -19,11 +17,9 @@ export default function SingleNote() {
 
   const utils = trpc.useUtils();
   const { data: note, isLoading } = trpc.notes.getById.useQuery({ id: noteId });
-  const themeId = note?.themeId ?? null
-  const {data: theme} = trpc.themes.getById.useQuery({id: themeId})
+
   const [location] = useLocation();
   const formatDate = (d: Date | string) => new Date(d).toLocaleString();
-  console.log(theme)
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [debouncedContent, setDebouncedContent] = useState(content);
@@ -31,8 +27,12 @@ export default function SingleNote() {
 
   const updateNote = trpc.notes.update.useMutation({
     onSuccess: (updatedNote) => {
+      console.log("✅ MUTATION SUCCESS");
       utils.notes.getById.setData({ id: noteId }, updatedNote);
       utils.notes.list.invalidate();
+       setShowSaved(true);
+        const t = setTimeout(() => setShowSaved(false), 1500);
+        return () => clearTimeout(t);
     },
   });
 
@@ -72,33 +72,25 @@ export default function SingleNote() {
     }
   }, [note, isEditing]);
 
-  // Auto-save note when debounced content changes and differs from server state
-  useEffect(() => {
-    if (updateNote.isSuccess) {
-      setShowSaved(true);
-      const t = setTimeout(() => setShowSaved(false), 1500);
-      return () => clearTimeout(t);
-    }
-  }, [updateNote.isSuccess]);
-
-  // Initialize local state when note is first loaded (title + content)
-  useEffect(() => {
+   useEffect(() => {
     if (!isEditing) return;
     if (!note) return;
 
-    if (debouncedContent === note.content && title === note.title) return;
+    const currentContent = note.content ?? "";
+
+    if (debouncedContent === currentContent && title === note.title) return;
 
     if (debouncedContent === lastSaved.current) return;
     lastSaved.current = debouncedContent;
 
     updateNote.mutate({
-      title,
       id: noteId,
+      title,
       content: debouncedContent,
-      themeId: note.themeId,
+      themeId: note.themeId ?? null,
     });
   }, [debouncedContent, note, title, isEditing]);
-
+  
   useEffect(() => {
     if (note) {
       setContent(note.content ?? "");
@@ -141,13 +133,13 @@ export default function SingleNote() {
         >
           ← Back
         </button>
-        <ThemeInlineSelector
-          noteId={note.id}
-          themeId={note.themeId ?? null}
-        />
+        <ThemeInlineSelector noteId={note.id} themeId={note.themeId ?? null} />
         <div className="text-xs text-gray-500 mt-1 w-20 text-right">
-          {updateNote.isPending && "Saving..."}
-          {showSaved && "✓ Saved"}
+          {updateNote.isPending
+            ? "Saving..."
+            : showSaved
+            ? "✓ Saved"
+            : ""}
         </div>
         {!isEditing && (
           <button
@@ -188,17 +180,16 @@ export default function SingleNote() {
       </div>
 
       {/* Content */}
-      
+
       {isEditing && (
-      <>
+        <>
           <textarea
             ref={contentRef}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             className="w-full h-40 border p-3 text-sm"
           />
-       
-      </>
+        </>
       )}
 
       {/* SAVE / CANCEL */}
@@ -207,10 +198,10 @@ export default function SingleNote() {
           <button
             onClick={() => {
               updateNote.mutate({
-                 id: note.id,
-                  title,
-                  content: content ?? "",
-                  themeId: note.themeId,
+                id: note.id,
+                title,
+                content: content ?? "",
+                themeId: note.themeId ?? null,
               });
               setIsEditing(false);
             }}
