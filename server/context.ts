@@ -1,8 +1,9 @@
 import { db } from "./db";
 import { users, sessions } from "./db/schema";
 import { eq } from "drizzle-orm";
+import { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 
-export async function createContext({ req, res }) {
+export async function createContext({ req, res }: CreateExpressContextOptions) {
   const cookie = req.headers.cookie ?? "";
 
   const sessionToken = cookie

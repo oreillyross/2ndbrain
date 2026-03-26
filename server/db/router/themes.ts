@@ -11,15 +11,21 @@ export const themesRouter = router({
       z.object({
         name: z.string().min(1),
         description: z.string().optional(),
-      
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const [theme] = await db.insert(themes).values({...input, userId: ctx.user.id,}).returning();
+      const [theme] = await db
+        .insert(themes)
+        .values({
+          ...input,
+          userId: ctx.user.id,
+        })
+        .returning();
+
       return theme;
     }),
 
-  list: protectedProcedure.query(async ({ctx}) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     const result = await db
       .select({
         id: themes.id,
@@ -38,55 +44,52 @@ export const themesRouter = router({
 
     return result;
   }),
-  getById: protectedProcedure
-  .input(z.object({ id: z.string().nullable().optional() }))
-  .query(async ({ ctx, input }) => {
-    const [theme] = await ctx.db
-      .select()
-      .from(themes)
-      .where(
-        and(
-          eq(themes.id, input.id),
-          eq(themes.userId, ctx.user.id) 
-        )
-      )
-      .limit(1);
 
-    return theme ?? null;
-  }),
+  // ✅ FIXED: id must NOT be nullable
+  getById: protectedProcedure
+    .input(z.object({ id: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [theme] = await ctx.db
+        .select()
+        .from(themes)
+        .where(and(eq(themes.id, input.id), eq(themes.userId, ctx.user.id)))
+        .limit(1);
+
+      return theme ?? null;
+    }),
+
   getNotes: protectedProcedure
     .input(z.object({ themeId: z.uuid() }))
     .query(async ({ input }) => {
       return db.query.notes.findMany({
-        where: (n, { eq }) => eq(n.themeId, input.themeId),
+        where: eq(notes.themeId, input.themeId),
         orderBy: (n, { desc }) => [desc(n.createdAt)],
       });
     }),
-  // server/routers/themes.ts
 
   summarise: protectedProcedure
     .input(z.object({ themeId: z.uuid() }))
     .mutation(async ({ input, ctx }) => {
-      // 1. get notes
-      const notes = await ctx.db.query.notes.findMany({
-        where: (n, { eq }) => eq(n.themeId, input.themeId),
+      // ✅ FIX: avoid shadowing "notes"
+      const themeNotes = await ctx.db.query.notes.findMany({
+        where: eq(notes.themeId, input.themeId),
         columns: {
           title: true,
           content: true,
         },
       });
 
-      if (notes.length === 0) {
+      if (themeNotes.length === 0) {
         throw new Error("No notes to summarise");
       }
 
-      // 2. build prompt
-      const text = notes
+      // build prompt
+      const text = themeNotes
         .map((n) => `${n.title}\n${n.content ?? ""}`)
         .join("\n\n---\n\n")
-        .slice(0, 12000); // guardrail
+        .slice(0, 12000);
 
-      // 3. call OpenAI (you already use fetch)
+      // call OpenAI
       const res = await fetch("https://api.openai.com/v1/responses", {
         method: "POST",
         headers: {
@@ -99,8 +102,8 @@ export const themesRouter = router({
             {
               role: "system",
               content: `You are an expert thinking assistant. 
-  Summarise the key ideas, themes, and insights from a collection of notes.
-  Be concise but insightful.`,
+Summarise the key ideas, themes, and insights from a collection of notes.
+Be concise but insightful.`,
             },
             {
               role: "user",
@@ -114,7 +117,7 @@ export const themesRouter = router({
       const summary =
         json.output?.[0]?.content?.[0]?.text ?? "No summary generated";
 
-      // 4. store it
+      // store result
       const [updated] = await ctx.db
         .update(themes)
         .set({

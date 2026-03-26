@@ -35,7 +35,7 @@ export const notesRouter = router({
   update: publicProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.uuid(),
         title: z.string(),
         content: z.string(),
         themeId: z.string().nullable(),
@@ -77,7 +77,7 @@ export const notesRouter = router({
         .limit(20);
     }),
   getById: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .query(async ({ input, ctx }) => {
       const result = await ctx.db
         .select()
@@ -109,7 +109,7 @@ export const notesRouter = router({
       return result[0] ?? null;
     }),
   delete: publicProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.uuid() }))
     .mutation(async ({ input, ctx }) => {
       await ctx.db.delete(notes).where(eq(notes.id, input.id));
 
@@ -117,7 +117,7 @@ export const notesRouter = router({
     }),
 
   backlinks: publicProcedure
-    .input(z.object({ noteId: z.string().uuid() }))
+    .input(z.object({ noteId: z.uuid() }))
     .query(async ({ input, ctx }) => {
       return ctx.db
         .select()
@@ -127,8 +127,8 @@ export const notesRouter = router({
   assignTheme: protectedProcedure
     .input(
       z.object({
-        noteId: z.string().uuid(),
-        themeId: z.string().uuid().nullable(),
+        noteId: z.uuid(),
+        themeId: z.uuid().nullable(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
@@ -141,10 +141,10 @@ export const notesRouter = router({
       return note;
     }),
   byTheme: publicProcedure
-    .input(z.object({ themeId: z.string().uuid() }))
+    .input(z.object({ themeId: z.uuid() }))
     .query(async ({ input, ctx }) => {
       return ctx.db.query.notes.findMany({
-        where: (notes, { eq }) => eq(notes.themeId, input.themeId),
+        where: eq(notes.themeId, input.themeId),
         orderBy: (notes, { desc }) => desc(notes.updatedAt),
       });
     }),
