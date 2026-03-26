@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
-    "dev:web": "cd web && npm run dev",
+    "dev:web": "vite --config web/vite.config.ts",
     "dev:api": "tsx server/index.ts",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",

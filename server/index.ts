@@ -47,7 +47,7 @@ if (process.env.NODE_ENV === "production") {
 
 // ✅ dynamic port for Railway
 const PORT = Number(process.env.PORT) || 8080;
-console.log("PORT ENV:", process.env.PORT);
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });
