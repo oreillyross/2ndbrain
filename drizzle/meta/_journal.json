@@ -22,6 +22,13 @@
       "when": 1774444580909,
       "tag": "0002_lowly_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774500000000,
+      "tag": "000X_add_search_vector",
+      "breakpoints": true
     }
   ]
 }
