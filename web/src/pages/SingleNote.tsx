@@ -111,7 +111,7 @@ export default function SingleNote() {
       const l = el.value.length;
       el.setSelectionRange(l, l);
     }
-  }, [isEditing, note]);
+  }, [isEditing]);
 
   if (isLoading) return <div>Loading...</div>;
   if (!note) return <div>Note not found</div>;
