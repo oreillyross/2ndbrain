@@ -50,8 +50,18 @@ export default function App() {
         </Switch>
       </div>
 
-      <div className="text-center text-sm text-gray-400 py-6">
-        notetaking at the speed of thought
+      <div className="flex items-center justify-between text-sm text-gray-400 py-6 px-6">
+        <div>notetaking at the speed of thought</div>
+
+        <div className="flex items-center gap-2">
+          <span>built with love by</span>
+          <a
+            href="mailto:devguy@duck.com"
+            className="hover:text-gray-600 transition underline underline-offset-2"
+          >
+            Faktor_10
+          </a>
+        </div>
       </div>
     </div>
   );

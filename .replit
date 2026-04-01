@@ -13,6 +13,10 @@ runButton = "Project"
 localPort = 3000
 externalPort = 80
 
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
 
 
 
