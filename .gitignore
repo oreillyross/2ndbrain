@@ -132,3 +132,4 @@ dist
 .dev.vars
 .wrangler/
 local.db*
+data/

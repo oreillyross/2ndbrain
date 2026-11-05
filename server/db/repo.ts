@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, count, desc, eq, inArray, lt, or, sql } from "drizzle-orm";
-import type { DB } from "./client";
+import type { DB } from "./types";
 import { links, notes, themes, users } from "./schema";
 
 /**

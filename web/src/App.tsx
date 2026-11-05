@@ -4,9 +4,7 @@ import { trpc } from "./lib/trpc";
 
 import Home from "./pages/Home";
 import SingleNote from "./pages/SingleNote";
-import Login from "./pages/Login";
 import {AuthStatus} from "./components/AuthStatus"
-import AuthCallback from "./auth/callback";
 import { ThemeDetail } from "./pages/ThemeDetailPage";
 
 export default function App() {
@@ -34,20 +32,16 @@ export default function App() {
           </div>
         </nav>
 
-        <Switch>
-          
-          <Route path="/auth/callback" component={AuthCallback} />
-
-          {/* ✅ auth-gated routes */}
-          {!user && <Route path="/" component={Login} />}
-          {user && (
-            <>
-              <Route path="/note/:id" component={SingleNote} />
-              <Route path="/theme/:id" component={ThemeDetail}/>
-              <Route path="/" component={Home} />
-            </>
-          )}
-        </Switch>
+        {/* Login happens in front of the app (Cloudflare Access / basic auth). */}
+        {!user ? (
+          <div className="p-6 max-w-xl mx-auto text-gray-600">Not authorised.</div>
+        ) : (
+          <Switch>
+            <Route path="/note/:id" component={SingleNote} />
+            <Route path="/theme/:id" component={ThemeDetail} />
+            <Route path="/" component={Home} />
+          </Switch>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-sm text-gray-400 py-6 px-6">

@@ -1,35 +1,21 @@
 import { trpc } from "../lib/trpc";
 
+/** Cloudflare Access logout endpoint (same origin when the app sits behind Access). */
+const LOGOUT_URL = "/cdn-cgi/access/logout";
+
 export function AuthStatus() {
   const { data: user, isLoading } = trpc.auth.me.useQuery(undefined, {
     staleTime: Infinity,
   });
-  const utils = trpc.useUtils();
 
-  const logout = trpc.auth.logout.useMutation({
-    onSuccess: () => {
-      utils.auth.me.invalidate();
-
-      window.location.href = "/";
-    },
-  });
-
-  if (isLoading) return null;
-
-  if (!user) {
-    return <div className="text-sm text-gray-500">Not logged in</div>;
-  }
+  if (isLoading || !user) return null;
 
   return (
     <div className="flex items-center gap-3 text-sm">
       <span className="text-gray-700">{user.email}</span>
-
-      <button
-        onClick={() => logout.mutate()}
-        className="text-red-500 hover:underline"
-      >
+      <a href={LOGOUT_URL} className="text-red-500 hover:underline">
         Logout
-      </button>
+      </a>
     </div>
   );
 }

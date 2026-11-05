@@ -33,44 +33,11 @@ export default function CreateNote() {
   const limitedResults = useMemo(() => results.slice(0, 5), [results]);
 
   const { activeIndex, onKeyDown } = useKeyboardList(limitedResults);
-  const { data: user } = trpc.auth.me.useQuery();
   // 🧠 create note
   const createNote = trpc.notes.create.useMutation({
-    onMutate: async (newNote) => {
-      await utils.notes.list.cancel();
-
-      const prev = utils.notes.list.getData();
-
-      const optimisticNote: any = {
-        id: "temp-" + Date.now().toString(),
-        userId: user!.id,
-        title: newNote.title,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        content: "",
-              };
-
-      utils.notes.list.setData(undefined, (old) => [
-        optimisticNote,
-        ...(old ?? []),
-      ]);
-
-      setTitle("");
-
-      return { prev };
-    },
-
-    onError: (_err, _newNote, ctx) => {
-      if (ctx?.prev) {
-        utils.notes.list.setData(undefined, ctx.prev);
-      }
-    },
-
-    onSettled: () => {
-      utils.notes.list.invalidate();
-    },
-
     onSuccess: (newNote) => {
+      setTitle("");
+      utils.notes.list.invalidate();
       navigate(`/note/${newNote.id}`);
     },
   });

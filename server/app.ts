@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { createMiddleware } from "hono/factory";
+import type { MiddlewareHandler } from "hono";
 import { trpcServer } from "@hono/trpc-server";
 import type { JWTVerifyGetKey } from "jose";
 import type { Client } from "@libsql/client/web";
@@ -17,17 +18,30 @@ export const MAX_BATCH = 10;
 type LibsqlClient = Pick<Client, "execute" | "batch">;
 
 type Deps = {
+  /** Identity middleware that sets c.var.user. Defaults to Cloudflare Access verification. */
+  auth?: MiddlewareHandler<AppEnv>;
   jwks?: JWTVerifyGetKey;
   /** libSQL client factory; defaults to the per-request web client from env. */
   client?: (env: Env) => LibsqlClient;
   ai?: (env: Env) => Summariser;
 };
 
-/** Rejects cross-site writes: non-GET requests must carry a same-origin Origin header. */
+/**
+ * Rejects cross-site writes: non-GET requests must carry an Origin header
+ * whose host equals the request host. Host (not scheme) is compared because
+ * behind a TLS-terminating proxy (Railway) the app sees http:// while the
+ * browser sends https://.
+ */
 const sameOriginWrites = createMiddleware<AppEnv>(async (c, next) => {
   if (c.req.method !== "GET" && c.req.method !== "HEAD") {
     const origin = c.req.header("Origin");
-    if (!origin || origin !== new URL(c.req.url).origin) {
+    let originHost: string | null = null;
+    try {
+      originHost = origin ? new URL(origin).host : null;
+    } catch {
+      originHost = null;
+    }
+    if (!originHost || originHost !== new URL(c.req.url).host) {
       return c.json({ error: "bad origin" }, 403);
     }
   }
@@ -52,8 +66,9 @@ export function createApp(deps: Deps = {}) {
 
   // Everything the Worker serves itself sits behind Access verification.
   // Static assets are served by the asset binding before the Worker runs.
-  app.use("/api/*", accessAuth({ jwks: deps.jwks }));
-  app.use("/trpc/*", accessAuth({ jwks: deps.jwks }), sameOriginWrites, batchLimit);
+  const auth = deps.auth ?? accessAuth({ jwks: deps.jwks });
+  app.use("/api/*", auth);
+  app.use("/trpc/*", auth, sameOriginWrites, batchLimit);
 
   app.get("/api/health", async (c) => {
     let db: "ok" | "error" = "ok";

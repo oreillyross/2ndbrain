@@ -66,3 +66,14 @@ No data moves from Railway Postgres. The new app starts with an empty Turso data
 - **AI:** `themes.summarise` goes through a `Summariser` in context (OpenAI Responses API via `fetch`, `OPENAI_API_KEY` secret). Upstream errors become `BAD_GATEWAY` without details. Budget: 2 DB round trips + 1 subrequest.
 - **`auth.logout` removed**; logout is the Access URL `/cdn-cgi/access/logout` (Phase 6).
 - **Phase 5 (search)** landed inside Phase 3/4: there is no separate commit.
+
+## Phase 6 + Railway MVP choices
+
+- **Frontend:** removed the login/callback pages and the logout mutation; `App` shows "Not authorised." when `auth.me` is null; Logout links to `/cdn-cgi/access/logout`. `httpBatchLink` has `maxItems: 10`. `NoteConnections` uses the flat `links.getLinked` shape. `CreateNote` dropped the optimistic `notes.list` update (it navigates away anyway).
+- **Dead code removed** (none of it was routed or imported): `NotesList`, `NoteCard`, `LinkedThoughts`, `SearchScreen`, `ThemeListPage`, `renderNoteContent`, `linkHandler`, `useHandleLinkClick`. `ThemeSummary` (the Summarise button) is kept but is still **not mounted anywhere**, as before: ask Ross.
+- **Markdown** moved into `NoteMarkdown` with an XSS regression test (`<script>`, `onerror=`, `javascript:` links/images).
+- **CSP** in `web/public/_headers` (copied to `dist/`), served by Workers assets and by the Node server.
+- **Web typecheck now passes** and is part of `npm run typecheck` / CI.
+- **Railway MVP via a Node entrypoint**, not `wrangler dev`: same `createApp`, identity middleware swapped to HTTP Basic auth (the Access middleware stays the Worker default, so the Worker cannot fall back to basic auth). SQLite file on a volume by default; migrations run at boot. `tsx` moved to dependencies to run TypeScript in production.
+- **CSRF check compares Origin host to request host** (not full origin) because Railway terminates TLS and the app sees `http://`.
+- **`/healthz`** is the only unauthenticated route on the Node server.

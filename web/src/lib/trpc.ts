@@ -10,6 +10,8 @@ export const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/trpc",
       transformer: superjson,
+      // Server rejects batches over 10 (one Worker invocation per batch).
+      maxItems: 10,
     }),
   ],
 });

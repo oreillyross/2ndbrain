@@ -150,6 +150,14 @@ describe("transport guards", () => {
     expect((await post("/trpc/notes.create", { Origin: "https://evil.example" })).status).toBe(403);
   });
 
+  it("rejects a malformed Origin", async () => {
+    expect((await post("/trpc/notes.create", { Origin: "null" })).status).toBe(403);
+  });
+
+  it("accepts https Origin for the same host behind a TLS-terminating proxy", async () => {
+    expect((await post("/trpc/notes.create", { Origin: "https://localhost:8787" })).status).toBe(200);
+  });
+
   it("accepts same-origin writes", async () => {
     expect((await post("/trpc/notes.create", { Origin: ORIGIN })).status).toBe(200);
   });
