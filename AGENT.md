@@ -34,19 +34,10 @@ The user should be able to:
 These constraints are strict.
 
 Backend:
-- Node
-- Express
-- tRPC
-- Zod
-- Drizzle ORM
-- Postgres
+CLAUDE WORK THESE OUT FROM KICKOFF.md file
 
 Frontend:
-- React
-- Typescript
-- Vite
-- Tanstack Query
-- tRPC client
+CLAUDE WORK THESE OUT FROM KICKOFF.md file
 
 No additional frameworks without strong justification.
 
@@ -62,7 +53,8 @@ V1 only includes:
 - wiki-style linking `[[note]]`
 - backlinks
 - tags
-
+- A very pretty view of the information I am seeking to understand, so everything should hang off a sort of latticework of understanding Charlie Munger style
+  
 Nothing else.
 
 ---
