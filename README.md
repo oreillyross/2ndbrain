@@ -59,34 +59,26 @@ Borrowed from Zettelkasten minimalism, extended into intelligence workflows:
 
 ---
 
-### 4. Auth (Production Ready)
+### 4. Auth
 
-* Magic link login
-* Secure cookie sessions
-* Multi-user isolation (userId scoping)
+* Today (legacy, Railway): magic link login + cookie sessions
+* After migration: Cloudflare Access in front of the app; no login code in the app
+* All data scoped per user (`userId`)
 
 ---
 
 ## 🧱 Tech Stack
 
-### Backend
+The app is migrating to a free-tier serverless stack. The plan is in [`KICKOFF.md`](./KICKOFF.md); decisions are in [`docs/decisions.md`](./docs/decisions.md).
 
-* Node.js
-* Express
-* tRPC
-* Zod
-* Drizzle ORM
-* PostgreSQL
-
----
-
-### Frontend
-
-* React
-* TypeScript
-* Vite
-* TanStack Query
-* Wouter
+| | Today (production) | Target |
+|---|---|---|
+| Runtime | Node.js + Express on Railway | Cloudflare Workers + Hono |
+| API | tRPC 11 + superjson + Zod | same, via `@hono/trpc-server` |
+| DB | PostgreSQL (Drizzle, node-postgres) | Turso / libSQL (Drizzle, SQLite dialect) |
+| Search | Postgres `tsvector` | SQLite FTS5 |
+| Auth | Magic links (Resend) | Cloudflare Access |
+| Frontend | React 19, Vite, TanStack Query, wouter, Tailwind, react-markdown | same |
 
 ---
 
@@ -94,9 +86,10 @@ Borrowed from Zettelkasten minimalism, extended into intelligence workflows:
 
 ```
 /web      → React frontend
-/server      → Express + tRPC API
-/shared      → shared types (Zod schemas)
-/drizzle     → migrations
+/server   → API (Express today, Hono Worker after migration)
+/shared   → shared types (`AppRouter`)
+/drizzle  → migrations
+/docs     → audit and decision records
 ```
 
 Single deployment unit.
@@ -105,7 +98,7 @@ No unnecessary abstraction.
 
 ---
 
-## ⚙️ Scripts
+## ⚙️ Scripts (legacy stack, until Phase 1 lands)
 
 ```bash
 npm run dev         # run frontend + backend
@@ -124,20 +117,24 @@ npm run db:migrate  # apply migrations
 
 * id
 * title
-* content (nullable)
+* content (markdown)
 * userId
+* themeId (nullable)
 * createdAt
 * updatedAt
 
----
+### Links
+
+* fromNoteId → toNoteId (nullable when unresolved), toTitle
 
 ### Themes
 
 * id
 * name
 * description
-* synopsis (JSON string)
+* synopsis
 * synopsisUpdatedAt
+* synopsisModel
 * createdAt
 
 ---
@@ -167,7 +164,7 @@ Each feature is:
 ### 3. SQL > Abstraction
 
 * Prefer simple joins over complex logic
-* Let Postgres do the heavy lifting
+* Let the database do the heavy lifting
 
 ---
 
@@ -183,7 +180,7 @@ Unlike typical apps:
 
 ## ❌ What We Avoid
 
-From the original philosophy :
+From the original philosophy:
 
 * graph views
 * plugin systems
@@ -202,14 +199,8 @@ From the original philosophy :
 ✅ Themes system implemented
 ✅ Theme-note linking
 ✅ Synopsis pipeline scaffolded
-⚠️ Migrations / schema discipline still stabilizing
-⚠️ Search vector system in flux
-
----
-
-## 🔮 Where This Is Going
-
-This evolves into:
+✅ Owner checks on every note/theme procedure (security hotfix)
+🚧 Migration to Workers + Turso + Cloudflare Access (see `KICKOFF.md`)
 
 ---
 
@@ -237,7 +228,7 @@ This project follows:
 Inspired by:
 
 * Hormozi-style execution
- Tim Denning-style obsession
+* Tim Denning-style obsession
 * my own **Faktor_10 philosophy**
 
 ---

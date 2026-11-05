@@ -1,8 +1,24 @@
-import { router, publicProcedure, protectedProcedure } from "../../trpc";
+import { TRPCError } from "@trpc/server";
+import { router, protectedProcedure } from "../../trpc";
 import { z } from "zod";
-import { links, notes } from "../schema";
+import { links, notes, themes } from "../schema";
 
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
+import type { Context } from "../../context";
+
+// Throws NOT_FOUND unless the theme exists and belongs to the user.
+async function assertThemeOwned(
+  db: Context["db"],
+  userId: string,
+  themeId: string,
+) {
+  const [theme] = await db
+    .select({ id: themes.id })
+    .from(themes)
+    .where(and(eq(themes.id, themeId), eq(themes.userId, userId)))
+    .limit(1);
+  if (!theme) throw new TRPCError({ code: "NOT_FOUND" });
+}
 
 export const notesRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
@@ -32,7 +48,7 @@ export const notesRouter = router({
         throw err;
       }
     }),
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         id: z.uuid(),
@@ -42,6 +58,10 @@ export const notesRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      if (input.themeId) {
+        await assertThemeOwned(ctx.db, ctx.user.id, input.themeId);
+      }
+
       const [updated] = await ctx.db
         .update(notes)
         .set({
@@ -50,9 +70,10 @@ export const notesRouter = router({
           updatedAt: new Date(),
           themeId: input.themeId ?? null,
         })
-        .where(eq(notes.id, input.id))
+        .where(and(eq(notes.id, input.id), eq(notes.userId, ctx.user.id)))
         .returning();
 
+      if (!updated) throw new TRPCError({ code: "NOT_FOUND" });
       return updated;
     }),
 
@@ -108,21 +129,44 @@ export const notesRouter = router({
 
       return result[0] ?? null;
     }),
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.uuid() }))
     .mutation(async ({ input, ctx }) => {
-      await ctx.db.delete(notes).where(eq(notes.id, input.id));
+      const [deleted] = await ctx.db
+        .delete(notes)
+        .where(and(eq(notes.id, input.id), eq(notes.userId, ctx.user.id)))
+        .returning({ id: notes.id });
+
+      if (!deleted) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // No FK on links yet: remove outgoing links and unresolve incoming ones
+      // so no orphan rows point at a deleted note.
+      await ctx.db.delete(links).where(eq(links.fromNoteId, deleted.id));
+      await ctx.db
+        .update(links)
+        .set({ toNoteId: null })
+        .where(eq(links.toNoteId, deleted.id));
 
       return { success: true };
     }),
 
-  backlinks: publicProcedure
+  backlinks: protectedProcedure
     .input(z.object({ noteId: z.uuid() }))
     .query(async ({ input, ctx }) => {
+      // Owner scoping goes through the source note: only links written from
+      // the user's own notes are returned.
       return ctx.db
-        .select()
+        .select({
+          id: links.id,
+          fromNoteId: links.fromNoteId,
+          toNoteId: links.toNoteId,
+          toTitle: links.toTitle,
+        })
         .from(links)
-        .where(eq(links.toNoteId, input.noteId));
+        .innerJoin(notes, eq(links.fromNoteId, notes.id))
+        .where(
+          and(eq(links.toNoteId, input.noteId), eq(notes.userId, ctx.user.id)),
+        );
     }),
   assignTheme: protectedProcedure
     .input(
@@ -132,19 +176,27 @@ export const notesRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      if (input.themeId) {
+        await assertThemeOwned(ctx.db, ctx.user.id, input.themeId);
+      }
+
       const [note] = await ctx.db
         .update(notes)
         .set({ themeId: input.themeId })
-        .where(eq(notes.id, input.noteId))
+        .where(and(eq(notes.id, input.noteId), eq(notes.userId, ctx.user.id)))
         .returning();
 
+      if (!note) throw new TRPCError({ code: "NOT_FOUND" });
       return note;
     }),
-  byTheme: publicProcedure
+  byTheme: protectedProcedure
     .input(z.object({ themeId: z.uuid() }))
     .query(async ({ input, ctx }) => {
       return ctx.db.query.notes.findMany({
-        where: eq(notes.themeId, input.themeId),
+        where: and(
+          eq(notes.themeId, input.themeId),
+          eq(notes.userId, ctx.user.id),
+        ),
         orderBy: (notes, { desc }) => desc(notes.updatedAt),
       });
     }),

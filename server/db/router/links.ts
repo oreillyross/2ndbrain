@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../trpc";
 import {eq, sql} from "drizzle-orm"
 import { z } from "zod";
@@ -23,7 +24,7 @@ export const linksRouter = router({
       `);
 
     if (valid.length !== 2) {
-      throw new Error("Invalid link");
+      throw new TRPCError({ code: "NOT_FOUND", message: "Invalid link" });
     }
 
     await ctx.db.insert(links).values({
