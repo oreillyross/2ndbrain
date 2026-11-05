@@ -9,9 +9,14 @@
     "build:api": "tsc",
     "build": "npm run build:web && npm run build:api",
     "start": "node dist/server/index.js",
-    "start:prod": "NODE_ENV=production node dist/server/index.js"
+    "start:prod": "NODE_ENV=production node dist/server/index.js",
+    "dev:worker": "wrangler dev",
+    "deploy": "npm run build:web && wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p . && tsc -p tsconfig.worker.json"
   },
   "dependencies": {
+    "@libsql/client": "^0.18.0",
     "@tanstack/react-query": "^5.90.21",
     "@trpc/client": "^11.13.4",
     "@trpc/react-query": "^11.13.4",
@@ -19,6 +24,8 @@
     "@vitejs/plugin-react": "^6.0.0",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",
+    "hono": "^4.13.16",
+    "jose": "^6.2.15",
     "lucide-react": "^1.0.0",
     "pg": "^8.20.0",
     "react": "^19.2.4",
@@ -32,6 +39,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261104.1",
     "@eslint/js": "^9.39.4",
     "@types/express": "^5.0.6",
     "@types/node": "^24.12.0",
@@ -49,6 +57,8 @@
     "tailwindcss": "^3.4.19",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^5.1.0",
+    "wrangler": "^4.158.0"
   }
 }
