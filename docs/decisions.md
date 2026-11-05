@@ -39,3 +39,15 @@ No data moves from Railway Postgres. The new app starts with an empty Turso data
 - **JWT checks:** RS256 only; `iss` must equal `TEAM_DOMAIN` (trailing slash stripped); `aud` must equal `POLICY_AUD`; `exp` enforced by jose. Email compared lowercased.
 - **Health DB failure returns 503 `{db:"error"}`** with the error logged, never echoed.
 - **`compatibility_date` 2026-10-01.**
+
+## Phase 2 choices
+
+- **New schema lives in `server/edge/db/schema.ts`**, separate from the legacy Postgres schema in `server/db/`, which is deleted with Express in Phase 4.
+- **Migrations in `migrations/`** (drizzle-kit `dialect: "turso"`). Old Postgres migrations and `extra/scripts.sql` moved to `archive/drizzle-pg/`.
+- **IDs:** `text` UUIDs from `crypto.randomUUID()` (the web app routes on them); `notes.rid` integer is the FTS rowid only.
+- **Timestamps:** `integer` `timestamp_ms`, SQL default `unixepoch('subsec') * 1000`; `notes.updated_at` also set by Drizzle `$onUpdateFn`.
+- **`themes.synopsis_updated_at`** is set explicitly when a synopsis is generated, instead of the old `$onUpdate` that bumped it on any theme edit.
+- **`links.user_id`** added (owner scoping without a join), cascade-deleted with the user.
+- **FTS5** external-content table on `rid`, porter + unicode61 + remove_diacritics 2; update trigger only fires on `title`/`content` changes.
+- **Foreign keys:** libSQL has `foreign_keys` on by default locally (tested). Turso Cloud over HTTP is **unverified**, so repo code (Phase 3) deletes/unlinks links itself in the same batch as a note delete rather than relying on cascades.
+- **CI:** GitHub Actions on PRs and pushes to `main`/`cf-turso`: `typecheck`, `test`, `build:web`. Web typecheck is not in CI yet (pre-existing errors; fixed in Phase 6).
