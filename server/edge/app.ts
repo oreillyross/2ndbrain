@@ -1,17 +1,18 @@
 import { Hono } from "hono";
 import type { JWTVerifyGetKey } from "jose";
 import { accessAuth } from "./access";
-import { createDb, type Db } from "./db";
+import type { Client } from "@libsql/client/web";
+import { createLibsqlClient } from "./db";
 import type { AppEnv, Env } from "./env";
 
 type Deps = {
   jwks?: JWTVerifyGetKey;
-  db?: (env: Env) => Db;
+  db?: (env: Env) => Pick<Client, "execute">;
 };
 
 export function createApp(deps: Deps = {}) {
   const app = new Hono<AppEnv>();
-  const getDb = deps.db ?? createDb;
+  const getDb = deps.db ?? createLibsqlClient;
 
   // Everything the Worker serves itself sits behind Access verification.
   // Static assets are served by the asset binding before the Worker runs.

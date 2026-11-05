@@ -1,8 +1,13 @@
 import { createClient, type Client } from "@libsql/client/web";
+import { drizzle } from "drizzle-orm/libsql/web";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import * as schema from "./db/schema";
 import type { Env } from "./env";
 
+export type DB = LibSQLDatabase<typeof schema>;
+
 /** Per-request libSQL client. Workers need the /web build (HTTP, no file: URLs). */
-export function createDb(env: Env): Client {
+export function createLibsqlClient(env: Env): Client {
   if (!env.TURSO_DATABASE_URL) {
     throw new Error("TURSO_DATABASE_URL unset");
   }
@@ -12,5 +17,7 @@ export function createDb(env: Env): Client {
   });
 }
 
-/** Minimal surface the app needs; lets tests pass a Node libSQL client. */
-export type Db = Pick<Client, "execute">;
+/** Wraps any libSQL client (web build in the Worker, Node build in tests/Node server). */
+export function makeDb(client: Pick<Client, "execute" | "batch">): DB {
+  return drizzle({ client: client as Client, schema });
+}
