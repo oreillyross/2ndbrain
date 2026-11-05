@@ -14,7 +14,6 @@ export async function sendEmail({
   if (!process.env.RESEND_API_KEY) {
     throw new Error("Missing RESEND_API_KEY");
   }
-  console.log(to, subject, html)
   return resend.emails.send({
     from: "onboarding@resend.dev", // change later to your domain
     to,

@@ -1,25 +1,14 @@
-# Project: Simple Zettelkasten
+# Project: 2ndBrain
 
-Purpose:
+Purpose: a fast, minimal, browser-based note system for thinking clarity, not feature richness.
 
-Build the simplest possible browser-based Zettelkasten system.
-
-The goal is **thinking clarity**, not feature richness.
-
-This project intentionally rejects most knowledge app features.
+The migration plan lives in `KICKOFF.md`. Read it before changing anything structural. Decisions not covered there are recorded in `docs/decisions.md`.
 
 ---
 
 # Philosophy
 
-This tool must remain:
-
-- fast
-- simple
-- boring
-- minimal
-
-If a feature slows thinking or adds UI complexity, it should not be added.
+The tool must stay fast, simple, boring and minimal. If a feature slows thinking or adds UI complexity, it does not belong.
 
 The user should be able to:
 
@@ -29,52 +18,70 @@ The user should be able to:
 
 ---
 
-# Tech Constraints
+# Tech Stack
 
-These constraints are strict.
+The app is mid-migration (see `KICKOFF.md`). Target stack, which new code must use:
 
 Backend:
-CLAUDE WORK THESE OUT FROM KICKOFF.md file
+- Cloudflare Workers (free plan), Hono, `@hono/trpc-server`
+- tRPC 11 + superjson + Zod
+- Drizzle ORM, SQLite dialect, on Turso via `@libsql/client/web` (client created per request from `env`)
+- SQLite FTS5 for search
+- Auth: Cloudflare Access in front of the Worker; the Worker verifies `Cf-Access-Jwt-Assertion` with `jose`. No application login code.
 
 Frontend:
-CLAUDE WORK THESE OUT FROM KICKOFF.md file
+- React 19, TypeScript, Vite, TanStack Query, wouter
+- Tailwind
+- `react-markdown` + `remark-gfm` (no raw HTML)
+
+Tooling: npm (single package, not a monorepo), wrangler, vitest.
+
+Legacy stack still running in production until cutover (Phase 9): Express, node-postgres, Postgres on Railway, magic-link auth via Resend. Only touch it for security fixes.
 
 No additional frameworks without strong justification.
 
 ---
 
-# Feature Constraints
+# Workers free-tier rules
 
-V1 only includes:
-
-- create note
-- edit note
-- search notes
-- wiki-style linking `[[note]]`
-- backlinks
-- tags
-- A very pretty view of the information I am seeking to understand, so everything should hang off a sort of latticework of understanding Charlie Munger style
-  
-Nothing else.
+- 10 ms CPU and 50 subrequests per invocation; a batched tRPC request counts as one invocation.
+- Each procedure does at most 3 DB round trips and states its budget; tests assert it.
+- Paginate lists. Never return every note with full content.
 
 ---
 
-# Explicitly Forbidden Features (V1)
+# Security rules
 
-Do NOT implement:
+- Routers never touch `db` or schema tables directly; they go through `ctx.repo` (owner-scoped). Every query is scoped to the current user.
+- Every procedure that reads or writes user data is a `protectedProcedure`. Auth failures throw `TRPCError`, not `Error`.
+- Never trust an ID from the client without checking it belongs to the user (notes, themes, links).
+- Never render raw HTML from notes (no `rehype-raw` without `rehype-sanitize`).
+- Never log tokens, secrets or note content.
+
+---
+
+# Feature set
+
+Implemented and kept:
+
+- create, edit, delete notes
+- search notes
+- wiki-style linking `[[note]]` and backlinks
+- markdown rendering of note content
+- themes (group notes) and an AI theme synopsis (OpenAI, on demand only)
+
+Not in scope during the migration: new features of any kind. The only deliberate behaviour change is the paginated `notes.list`. Syncing `[[wikilinks]]` into the `links` table on save is Phase 10, after parity.
+
+Still forbidden:
 
 - graph view
-- markdown rendering
 - plugins
-- themes
 - collaboration
 - mobile apps
-- sync engines
-- offline mode
-- folders
-- nested notebooks
+- sync engines / offline mode
+- folders, nested notebooks
 - block editors
-- AI features
+- AI features beyond the existing theme synopsis
 
 If a feature is not required for writing and linking notes, it is unnecessary.
 
@@ -82,85 +89,25 @@ If a feature is not required for writing and linking notes, it is unnecessary.
 
 # UI Constraints
 
-UI must remain minimal.
-
-Allowed UI elements:
-
-- note editor
-- search bar
-- backlinks panel
-- tag list
-
-No complex layout systems.
+UI must remain minimal: note editor, search bar, backlinks panel, theme list. No complex layout systems.
 
 ---
 
 # Engineering Rules
 
-Prefer:
+Prefer vertical feature slices, simple database queries, readable code, boring architecture. If something can be solved with simple SQL instead of application logic, use SQL.
 
-- vertical feature slices
-- simple database queries
-- readable code
-- boring architecture
-
-Avoid:
-
-- premature abstraction
-- microservices
-- event systems
-- complex caching
-- unnecessary state managers
-
----
-
-# Performance Goals
-
-Search results must return in <100ms.
-
-Note creation must feel instantaneous.
-
----
-
-# Code Philosophy
+Avoid premature abstraction, microservices, event systems, complex caching, unnecessary state managers.
 
 If a feature requires more than ~200 lines of code, question whether it belongs.
-
-If something can be solved with simple SQL instead of application logic, use SQL.
-
----
-
-# AI Usage
-
-AI features are **explicitly forbidden in V1**.
-
-Possible V2 ideas:
-
-- automatic tagging
-- note summarization
-- knowledge clustering
-
-But these should only be considered after the core system is stable.
 
 ---
 
 # Success Criteria
 
-The project is successful if:
-
 - it can hold 10,000 notes
-- search is fast
+- search returns in < 100 ms
 - linking works reliably
 - the UI is frictionless
 
-If users enjoy writing and connecting ideas, the project succeeded.
-
----
-
-# Guiding Question
-
-Before adding any feature ask:
-
-"Does this make thinking faster?"
-
-If not, do not build it.
+Before adding any feature ask: "Does this make thinking faster?" If not, do not build it.

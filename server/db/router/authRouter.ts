@@ -41,15 +41,6 @@ export const authRouter = router({
 
       return { success: true };
     }),
-  testEmail: publicProcedure.mutation(async () => {
-    await sendEmail({
-      to: "oreillyross@gmail.com",
-      subject: "Test email",
-      html: "<p>It works 🚀</p>",
-    });
-
-    return { ok: true };
-  }),
 
   verifyMagicLink: publicProcedure
     .input(z.object({ token: z.string() }))
@@ -58,7 +49,6 @@ export const authRouter = router({
       const record = await db.query.magicTokens.findFirst({
         where: eq(magicTokens.token, input.token),
       });
-      console.log("RECORD IS:", record, "TOKEN IS:", input.token);
 
       if (!record || record.expiresAt < new Date()) {
         throw new TRPCError({
@@ -71,7 +61,6 @@ export const authRouter = router({
       let user = await db.query.users.findFirst({
         where: eq(users.email, record.email),
       });
-      console.log("user", user);
       if (!user) {
         const [newUser] = await db
           .insert(users)

@@ -1,7 +1,7 @@
 // server/routers/themes.ts
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../trpc";
-import { db } from "../";
 import { themes, notes } from "../schema";
 import { eq, count, and } from "drizzle-orm";
 
@@ -14,7 +14,7 @@ export const themesRouter = router({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const [theme] = await db
+      const [theme] = await ctx.db
         .insert(themes)
         .values({
           ...input,
@@ -26,7 +26,7 @@ export const themesRouter = router({
     }),
 
   list: protectedProcedure.query(async ({ ctx }) => {
-    const result = await db
+    const result = await ctx.db
       .select({
         id: themes.id,
         name: themes.name,
@@ -60,9 +60,12 @@ export const themesRouter = router({
 
   getNotes: protectedProcedure
     .input(z.object({ themeId: z.uuid() }))
-    .query(async ({ input }) => {
-      return db.query.notes.findMany({
-        where: eq(notes.themeId, input.themeId),
+    .query(async ({ input, ctx }) => {
+      return ctx.db.query.notes.findMany({
+        where: and(
+          eq(notes.themeId, input.themeId),
+          eq(notes.userId, ctx.user.id),
+        ),
         orderBy: (n, { desc }) => [desc(n.createdAt)],
       });
     }),
@@ -70,9 +73,21 @@ export const themesRouter = router({
   summarise: protectedProcedure
     .input(z.object({ themeId: z.uuid() }))
     .mutation(async ({ input, ctx }) => {
+      const [theme] = await ctx.db
+        .select({ id: themes.id })
+        .from(themes)
+        .where(
+          and(eq(themes.id, input.themeId), eq(themes.userId, ctx.user.id)),
+        )
+        .limit(1);
+      if (!theme) throw new TRPCError({ code: "NOT_FOUND" });
+
       // ✅ FIX: avoid shadowing "notes"
       const themeNotes = await ctx.db.query.notes.findMany({
-        where: eq(notes.themeId, input.themeId),
+        where: and(
+          eq(notes.themeId, input.themeId),
+          eq(notes.userId, ctx.user.id),
+        ),
         columns: {
           title: true,
           content: true,
@@ -80,7 +95,10 @@ export const themesRouter = router({
       });
 
       if (themeNotes.length === 0) {
-        throw new Error("No notes to summarise");
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "No notes to summarise",
+        });
       }
 
       // build prompt
@@ -125,7 +143,9 @@ Be concise but insightful.`,
           synopsisUpdatedAt: new Date(),
           synopsisModel: "gpt-4.1-mini",
         })
-        .where(eq(themes.id, input.themeId))
+        .where(
+          and(eq(themes.id, input.themeId), eq(themes.userId, ctx.user.id)),
+        )
         .returning();
 
       return updated;
