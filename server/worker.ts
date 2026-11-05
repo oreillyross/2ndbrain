@@ -1,3 +1,3 @@
-import { createApp } from "./edge/app";
+import { createApp } from "./app";
 
 export default createApp();

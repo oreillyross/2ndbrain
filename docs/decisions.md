@@ -51,3 +51,18 @@ No data moves from Railway Postgres. The new app starts with an empty Turso data
 - **FTS5** external-content table on `rid`, porter + unicode61 + remove_diacritics 2; update trigger only fires on `title`/`content` changes.
 - **Foreign keys:** libSQL has `foreign_keys` on by default locally (tested). Turso Cloud over HTTP is **unverified**, so repo code (Phase 3) deletes/unlinks links itself in the same batch as a note delete rather than relying on cascades.
 - **CI:** GitHub Actions on PRs and pushes to `main`/`cf-turso`: `typecheck`, `test`, `build:web`. Web typecheck is not in CI yet (pre-existing errors; fixed in Phase 6).
+
+## Phase 3–5 choices
+
+- **Layout:** the legacy Express server is deleted and `server/edge/*` is flattened into `server/` (`app.ts`, `access.ts`, `db/`, `trpc/`). One `tsconfig.json` (Workers types, bundler resolution) covers `server/` and `shared/`.
+- **Repo returns `TRPCError`s** (NOT_FOUND, CONFLICT, BAD_REQUEST) directly. Coupling to tRPC is accepted to keep routers one-liners.
+- **Ownership checks inside the write statement** (`UPDATE … WHERE id AND user_id AND (theme is null OR theme owned)`), so update/assignTheme are 1 round trip; failure is NOT_FOUND either way.
+- **`notes.list`** is keyset-paginated on `(updated_at desc, rid desc)` with an opaque cursor, default 50, max 100, no `content`.
+- **Search:** user text is tokenised and each token quoted for FTS5 (operators become literals); last token gets a `*` prefix match for search-as-you-type; ranking `bm25(notes_fts, 10, 1)` weights title over content; 20 results.
+- **Self-links allowed** (old code rejected them by accident).
+- **User lookup** per request is cached per isolate (email → id), so a warm request costs 0 extra round trips.
+- **Batch cap:** the server rejects tRPC batches over 10 procedures (413); the client sets `maxItems: 10`. tRPC 11 has no server-side option for this.
+- **CSRF:** non-GET `/trpc` requests must send `Origin` equal to the request origin. No CORS headers are emitted.
+- **AI:** `themes.summarise` goes through a `Summariser` in context (OpenAI Responses API via `fetch`, `OPENAI_API_KEY` secret). Upstream errors become `BAD_GATEWAY` without details. Budget: 2 DB round trips + 1 subrequest.
+- **`auth.logout` removed**; logout is the Access URL `/cdn-cgi/access/logout` (Phase 6).
+- **Phase 5 (search)** landed inside Phase 3/4: there is no separate commit.

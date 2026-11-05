@@ -1,6 +1,6 @@
 import { createClient, type Client } from "@libsql/client";
 import { applyMigrations } from "../db/migrate";
-import { makeDb, type DB } from "../db";
+import { makeDb, type DB } from "../db/client";
 import { forUser, upsertUserByEmail } from "../db/repo";
 
 /** libSQL client that counts DB round trips (each execute/batch/transaction = 1). */

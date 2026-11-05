@@ -1,8 +1,8 @@
 import { createClient, type Client } from "@libsql/client/web";
 import { drizzle } from "drizzle-orm/libsql/web";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import * as schema from "./db/schema";
-import type { Env } from "./env";
+import * as schema from "./schema";
+import type { Env } from "../env";
 
 export type DB = LibSQLDatabase<typeof schema>;
 

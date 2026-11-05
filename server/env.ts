@@ -8,6 +8,7 @@ export type Env = {
   ALLOWED_EMAILS?: string;
   TURSO_DATABASE_URL?: string;
   TURSO_AUTH_TOKEN?: string;
+  OPENAI_API_KEY?: string;
   /** Local dev only (.dev.vars). Never set in wrangler.jsonc. */
   ENVIRONMENT?: string;
   DEV_EMAIL?: string;

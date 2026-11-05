@@ -52,7 +52,7 @@ const prodEnv = (over: Partial<Env> = {}): Env =>
 const memDb = () => createClient({ url: ":memory:" });
 
 function app() {
-  return createApp({ jwks, db: memDb });
+  return createApp({ jwks, client: memDb });
 }
 
 async function get(env: Env, token?: string, url = PROD_URL) {
@@ -128,7 +128,7 @@ describe("Access JWT middleware", () => {
 
   it("protects /trpc/* too", async () => {
     const res = await app().request(
-      "https://2ndbrain.example.workers.dev/trpc/health.ping",
+      "https://2ndbrain.example.workers.dev/trpc/auth.me",
       {},
       prodEnv(),
     );
@@ -174,10 +174,11 @@ describe("health", () => {
   it("reports db error as 503 without leaking details", async () => {
     const broken = createApp({
       jwks,
-      db: () => ({
+      client: () => ({
         execute: async () => {
           throw new Error("secret connection string");
         },
+        batch: async () => [],
       }),
     });
     const res = await broken.request(
