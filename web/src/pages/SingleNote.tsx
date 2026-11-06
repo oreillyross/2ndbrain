@@ -3,8 +3,7 @@ import { trpc } from "../lib/trpc";
 import { useParams, useLocation } from "wouter";
 import { ThemeInlineSelector } from "../components/ThemeInlineSelector";
 import { NoteConnections } from "../components/NoteConnections";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { NoteMarkdown } from "../components/NoteMarkdown";
 
 export default function SingleNote() {
   const initialEditingState = () => {
@@ -29,7 +28,6 @@ export default function SingleNote() {
 
   const updateNote = trpc.notes.update.useMutation({
     onSuccess: (updatedNote) => {
-      console.log("✅ MUTATION SUCCESS");
       utils.notes.getById.setData({ id: noteId }, updatedNote);
       utils.notes.list.invalidate();
        setShowSaved(true);
@@ -159,31 +157,7 @@ export default function SingleNote() {
           <div className="text-lg font-semibold">{note.title}</div>
           <div className="prose prose-sm max-w-none text-gray-800">
             {note.content ? (
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  a: ({ href, children }) => (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline hover:text-blue-800"
-                    >
-                      {children}
-                    </a>
-                  ),
-                  h1: ({ children }) => <h1 className="text-2xl font-bold mt-4 mb-2">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-xl font-semibold mt-3 mb-1">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-lg font-semibold mt-2 mb-1">{children}</h3>,
-                  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-                  ul: ({ children }) => <ul className="list-disc list-inside space-y-1">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside space-y-1">{children}</ol>,
-                  code: ({ children }) => <code className="bg-gray-100 rounded px-1 text-xs font-mono">{children}</code>,
-                  blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-3 italic text-gray-600">{children}</blockquote>,
-                }}
-              >
-                {note.content}
-              </ReactMarkdown>
+              <NoteMarkdown content={note.content} />
             ) : (
               <span className="text-gray-400 italic">No content yet...</span>
             )}

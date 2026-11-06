@@ -131,3 +131,5 @@ dist
 # Cloudflare
 .dev.vars
 .wrangler/
+local.db*
+data/
