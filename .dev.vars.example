@@ -1,0 +1,6 @@
+# Copy to .dev.vars for `npm run dev:worker`. Never commit .dev.vars.
+ENVIRONMENT=development
+DEV_EMAIL=you@example.com
+# Turso dev database (`turso db create 2ndbrain-dev`), or `turso dev` → http://127.0.0.1:8080
+TURSO_DATABASE_URL=libsql://2ndbrain-dev-<org>.turso.io
+TURSO_AUTH_TOKEN=

@@ -17,8 +17,8 @@ export default defineConfig({
     port: 3000,
     allowedHosts: true,
     proxy: {
-      "/api": "http://localhost:8080",
-      "/trpc": "http://localhost:8080",
+      "/api": "http://localhost:8787",
+      "/trpc": "http://localhost:8787",
     },
   },
 });

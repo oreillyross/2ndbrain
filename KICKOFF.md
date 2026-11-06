@@ -188,7 +188,7 @@ Type notes: superjson continues to round-trip `Date` because Drizzle returns `Da
 - Remove `Login.tsx`, `auth/callback.tsx`, the logout mutation (use the Access logout URL), and the unauthenticated branch of `App.tsx` (show a plain "not authorised" if `auth.me` is null). Set `maxItems` on `httpBatchLink`. Update the Vite proxy. Add the XSS regression test and CSP file.
 - Done when: the deployed app works end to end behind Access, with no CORS headers emitted.
 
-**Phase 7: Data migration (Postgres → Turso)**
+**Phase 7: Data migration (Postgres → Turso)** — **dropped: blank slate, see `docs/decisions.md`**
 - One-off Node script (not a Worker, so the subrequest cap does not apply): read PG with the old schema (do not select `search_vector`), transform per section 7 (UUIDs preserved, timestamps to ms, `links.user_id` backfilled, orphan links dropped), write to Turso in chunked batches. Idempotent. Dry run on a scratch Turso DB first. Migrate `users`, `themes`, `notes`, `links`; skip `sessions`, `magic_tokens`, `tags`.
 - Done when: per-table counts match; sampled notes match byte for byte; backlink queries and 10 sampled searches match the old results; logging in through Access shows the migrated notes.
 

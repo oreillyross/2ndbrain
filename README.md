@@ -71,7 +71,7 @@ Borrowed from Zettelkasten minimalism, extended into intelligence workflows:
 
 The app is migrating to a free-tier serverless stack. The plan is in [`KICKOFF.md`](./KICKOFF.md); decisions are in [`docs/decisions.md`](./docs/decisions.md).
 
-| | Today (production) | Target |
+| | Old app (`pg-final` tag) | Now |
 |---|---|---|
 | Runtime | Node.js + Express on Railway | Cloudflare Workers + Hono |
 | API | tRPC 11 + superjson + Zod | same, via `@hono/trpc-server` |
@@ -86,9 +86,9 @@ The app is migrating to a free-tier serverless stack. The plan is in [`KICKOFF.m
 
 ```
 /web      → React frontend
-/server   → API (Express today, Hono Worker after migration)
+/server   → Hono app + tRPC (worker.ts for Cloudflare, node.ts for Railway)
 /shared   → shared types (`AppRouter`)
-/drizzle  → migrations
+/migrations → SQLite migrations (incl. hand-written FTS5)
 /docs     → audit and decision records
 ```
 
@@ -98,16 +98,18 @@ No unnecessary abstraction.
 
 ---
 
-## ⚙️ Scripts (legacy stack, until Phase 1 lands)
+## ⚙️ Scripts
 
 ```bash
-npm run dev         # run frontend + backend
-npm run build       # build both
-npm run start:prod  # run production server
-
-npm run db:generate # generate migrations
-npm run db:migrate  # apply migrations
+npm run dev          # Vite (5173→ proxies /api,/trpc) + wrangler dev Worker on :8787
+npm run dev:node     # Node server on :8080 (basic auth dev/dev), after npm run build:web
+npm test             # vitest: repo, isolation, round-trip budgets, tRPC, Access, XSS
+npm run typecheck    # server + web
+npm run deploy       # build + wrangler deploy (Cloudflare)
+npm run db:generate  # drizzle-kit generate (never `push`: FTS5 is hand-written)
 ```
+
+Deploying: Cloudflare → `docs/deploy.md`; Railway (MVP / UI acceptance) → `docs/railway.md`.
 
 ---
 

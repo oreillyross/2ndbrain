@@ -1,5 +1,7 @@
 # Phase 0 audit
 
+> **Superseded for data:** Ross chose a blank slate (see `docs/decisions.md`), so the Postgres queries below are not needed. The code audit still applies.
+
 Phase 0 of `KICKOFF.md` asks for audit numbers from the production database. The agent that prepared this file has no access to the Railway Postgres, so the **Data audit** table is empty. Run the queries below with `psql "$DATABASE_URL"` and fill in the results before Phase 1 starts.
 
 ## Data audit (run against Railway Postgres)
