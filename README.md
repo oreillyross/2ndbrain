@@ -61,8 +61,7 @@ Borrowed from Zettelkasten minimalism, extended into intelligence workflows:
 
 ### 4. Auth
 
-* Today (legacy, Railway): magic link login + cookie sessions
-* After migration: Cloudflare Access in front of the app; no login code in the app
+* Cloudflare Access in front of the app; no login code in the app
 * All data scoped per user (`userId`)
 
 ---
@@ -86,7 +85,7 @@ The app is migrating to a free-tier serverless stack. The plan is in [`KICKOFF.m
 
 ```
 /web      → React frontend
-/server   → Hono app + tRPC (worker.ts for Cloudflare, node.ts for Railway)
+/server   → Hono app + tRPC (worker.ts is the Cloudflare Worker entry)
 /shared   → shared types (`AppRouter`)
 /migrations → SQLite migrations (incl. hand-written FTS5)
 /docs     → audit and decision records
@@ -101,15 +100,18 @@ No unnecessary abstraction.
 ## ⚙️ Scripts
 
 ```bash
-npm run dev          # Vite (5173→ proxies /api,/trpc) + wrangler dev Worker on :8787
-npm run dev:node     # Node server on :8080 (basic auth dev/dev), after npm run build:web
+npm run dev          # Vite (:3000, proxies /api,/trpc) + wrangler dev Worker on :8787
+npm run preview      # production build served by wrangler dev on :8787 (assets + API)
 npm test             # vitest: repo, isolation, round-trip budgets, tRPC, Access, XSS
 npm run typecheck    # server + web
 npm run deploy       # build + wrangler deploy (Cloudflare)
 npm run db:generate  # drizzle-kit generate (never `push`: FTS5 is hand-written)
+npm run db:migrate   # apply migrations to TURSO_DATABASE_URL
 ```
 
-Deploying: Cloudflare → `docs/deploy.md`; Railway (MVP / UI acceptance) → `docs/railway.md`.
+## ☁️ Deployment
+
+One Cloudflare Worker: the React build is served as static assets (SPA fallback, `_headers` CSP), `/api/*` and `/trpc/*` run Hono + tRPC at the edge, data lives in Turso. Cloudflare Access handles login. Step-by-step: [`docs/deploy.md`](./docs/deploy.md). Pushes to `main` auto-deploy once the GitHub secrets are set.
 
 ---
 
@@ -196,13 +198,12 @@ From the original philosophy:
 
 ## 🎯 Current Status
 
-✅ Auth working (magic links + sessions)
 ✅ Notes CRUD working
 ✅ Themes system implemented
 ✅ Theme-note linking
 ✅ Synopsis pipeline scaffolded
 ✅ Owner checks on every note/theme procedure (security hotfix)
-🚧 Migration to Workers + Turso + Cloudflare Access (see `KICKOFF.md`)
+✅ Runs on Cloudflare Workers (static assets + edge API) + Turso, behind Cloudflare Access
 
 ---
 

@@ -28,9 +28,8 @@ type Deps = {
 
 /**
  * Rejects cross-site writes: non-GET requests must carry an Origin header
- * whose host equals the request host. Host (not scheme) is compared because
- * behind a TLS-terminating proxy (Railway) the app sees http:// while the
- * browser sends https://.
+ * whose host equals the request host. Host (not scheme) is compared so the
+ * check is independent of how TLS is terminated in front of the Worker.
  */
 const sameOriginWrites = createMiddleware<AppEnv>(async (c, next) => {
   if (c.req.method !== "GET" && c.req.method !== "HEAD") {
