@@ -88,3 +88,15 @@ The Railway MVP was a mistake in the request: the MVP is hosted on Cloudflare.
 - **Auth** is Cloudflare Access only.
 - **Deploy workflow** (`.github/workflows/deploy.yml`) on pushes to `main`: typecheck, test, migrate, deploy. It no-ops with a notice until the Cloudflare and Turso secrets exist.
 - `npm run preview` added: production build served by `wrangler dev`.
+
+## Phase 8 choices (backups)
+
+- **Snapshot = Markdown + JSON.** `notes/<id>.md` (frontmatter + content verbatim) for notes; `users.json`, `themes.json`, `links.json` for the rest, so a full restore needs nothing else. Format documented in `docs/backup.md`, versioned by `manifest.json`.
+- **Frontmatter values are JSON** (valid YAML), parsed by hand: no YAML dependency, and titles with quotes/colons/`---` round-trip exactly.
+- **Files named by note id**, not title: renames don't churn files, no slug collisions.
+- **`rid` and user ids are preserved** on restore, so pagination cursors, FTS rowids and the Access email → user mapping all survive.
+- **Restore drill runs every night in the workflow** against an in-memory SQLite DB, instead of a one-off drill on a scratch Turso DB. Because Phase 7 is dropped, "Phase 7 verification" is interpreted as: counts, every note byte for byte, every link (backlinks), FTS `integrity-check` + one index entry per note. Tests also compare repo results (notes, backlinks, themes, list, searches, isolation) before and after restore. `SCRATCH_DATABASE_URL` allows a drill against a real Turso DB.
+- **Export is one read `batch`** (one transaction, consistent snapshot). Fine up to the 10,000-note target; revisit with paging if the response gets too large.
+- **Restore refuses a non-empty database**; no merge mode.
+- **Separate read-only Turso token** (`BACKUP_TURSO_AUTH_TOKEN`) for the backup job; the backup repo is a GitHub repository variable `BACKUP_REPO` + fine-grained token `BACKUP_REPO_TOKEN`. Workflow no-ops with a notice until they exist, like the deploy workflow.
+- **`tsx` back as a devDependency** to run the Node-only backup CLI (`npm run backup -- <export|verify|restore> <dir>`).

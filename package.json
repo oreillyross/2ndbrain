@@ -10,7 +10,8 @@
     "typecheck": "tsc -p . && tsc --noEmit -p web/tsconfig.app.json",
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:worker\"",
     "build": "npm run build:web",
-    "preview": "npm run build:web && wrangler dev"
+    "preview": "npm run build:web && wrangler dev",
+    "backup": "tsx server/backup/cli.ts"
   },
   "dependencies": {
     "@hono/trpc-server": "^0.4.2",
@@ -48,6 +49,7 @@
     "globals": "^17.4.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^5.1.0",
