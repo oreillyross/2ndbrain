@@ -20,9 +20,9 @@
   // Secrets (set with `wrangler secret put`): TURSO_DATABASE_URL, TURSO_AUTH_TOKEN.
   // Never put ENVIRONMENT or DEV_EMAIL here; they belong in .dev.vars only.
   "vars": {
-    "TEAM_DOMAIN": "",
-    "POLICY_AUD": "",
-    "ALLOWED_EMAILS": ""
+    "TEAM_DOMAIN": "proud-cloud-69af.cloudflareaccess.com",
+    "POLICY_AUD": "1e06055886178fb3abd46d42b9df0d3f90efa21f927e470b485133ec0616059d",
+    "ALLOWED_EMAILS": "oreillyross@gmail.com"
   },
 
   "observability": { "enabled": true }
