@@ -77,3 +77,14 @@ No data moves from Railway Postgres. The new app starts with an empty Turso data
 - **Railway MVP via a Node entrypoint**, not `wrangler dev`: same `createApp`, identity middleware swapped to HTTP Basic auth (the Access middleware stays the Worker default, so the Worker cannot fall back to basic auth). SQLite file on a volume by default; migrations run at boot. `tsx` moved to dependencies to run TypeScript in production.
 - **CSRF check compares Origin host to request host** (not full origin) because Railway terminates TLS and the app sees `http://`.
 - **`/healthz`** is the only unauthenticated route on the Node server.
+
+## Cloudflare-only MVP (2026-11-06, Ross)
+
+The Railway MVP was a mistake in the request: the MVP is hosted on Cloudflare.
+
+- **Removed the Node/Railway path:** `server/node.ts`, `server/basicAuth.ts`, `Dockerfile`, `.dockerignore`, `railway.json`, `docs/railway.md`, `@hono/node-server`, `tsx`, `start`/`dev:node` scripts. The Phase 6 Railway notes above are superseded.
+- **One Worker** serves the static React build (Workers assets, SPA fallback, `_headers`) and the edge API (`run_worker_first` for `/api/*`, `/trpc/*`). No separate Pages project.
+- **Turso** stays the database, reached over HTTPS with `@libsql/client/web`. Migrations are applied out-of-band with `npm run db:migrate` (drizzle-kit, FTS5 included), locally or in the deploy workflow, never at Worker startup.
+- **Auth** is Cloudflare Access only.
+- **Deploy workflow** (`.github/workflows/deploy.yml`) on pushes to `main`: typecheck, test, migrate, deploy. It no-ops with a notice until the Cloudflare and Turso secrets exist.
+- `npm run preview` added: production build served by `wrangler dev`.
