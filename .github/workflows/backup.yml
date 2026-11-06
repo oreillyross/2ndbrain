@@ -1,0 +1,77 @@
+name: Backup
+
+# Nightly export of the production Turso database into a private git repo:
+# one Markdown file per note (frontmatter + content) plus JSON for users,
+# themes and links. Every run also does a restore drill: the snapshot is
+# restored into a scratch in-memory database, exported again and must match
+# byte for byte. Nothing is pushed if the drill fails. See docs/backup.md.
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.BACKUP_TURSO_AUTH_TOKEN }}
+      BACKUP_REPO: ${{ vars.BACKUP_REPO }}
+      BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+    steps:
+      - name: Check backup settings
+        id: gate
+        run: |
+          if [ -z "$TURSO_DATABASE_URL" ] || [ -z "$TURSO_AUTH_TOKEN" ] || [ -z "$BACKUP_REPO" ] || [ -z "$BACKUP_REPO_TOKEN" ]; then
+            echo "::notice::Backup skipped: set secrets TURSO_DATABASE_URL, BACKUP_TURSO_AUTH_TOKEN, BACKUP_REPO_TOKEN and variable BACKUP_REPO (see docs/backup.md)"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.gate.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.gate.outputs.ready == 'true'
+        name: Check out the backup repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.BACKUP_REPO }}
+          token: ${{ secrets.BACKUP_REPO_TOKEN }}
+          path: backup-repo
+      - if: steps.gate.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - if: steps.gate.outputs.ready == 'true'
+        run: npm ci
+      - if: steps.gate.outputs.ready == 'true'
+        name: Export Turso → Markdown
+        run: npm run backup -- export backup-repo
+      - if: steps.gate.outputs.ready == 'true'
+        name: Restore drill
+        env:
+          TURSO_DATABASE_URL: ""
+          TURSO_AUTH_TOKEN: ""
+        run: npm run backup -- verify backup-repo
+      - if: steps.gate.outputs.ready == 'true'
+        name: Commit and push
+        working-directory: backup-repo
+        run: |
+          git config user.name "2ndbrain-backup"
+          git config user.email "2ndbrain-backup@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes since the last backup."
+          else
+            git commit -q -m "Backup $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push -q
+          fi

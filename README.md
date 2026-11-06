@@ -113,6 +113,8 @@ npm run db:migrate   # apply migrations to TURSO_DATABASE_URL
 
 One Cloudflare Worker: the React build is served as static assets (SPA fallback, `_headers` CSP), `/api/*` and `/trpc/*` run Hono + tRPC at the edge, data lives in Turso. Cloudflare Access handles login. Step-by-step: [`docs/deploy.md`](./docs/deploy.md). Pushes to `main` auto-deploy once the GitHub secrets are set.
 
+Backups: a nightly GitHub Action exports every note as Markdown into a private git repo and runs a restore drill. Setup and restore steps: [`docs/backup.md`](./docs/backup.md).
+
 ---
 
 ## 🧠 Data Model (Simplified)
