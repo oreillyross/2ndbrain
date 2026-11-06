@@ -7,6 +7,7 @@ The export runs in GitHub Actions, never in the Worker: reading every note would
 ## Snapshot format
 
 ```
+.gitattributes     "* -text": git never rewrites line endings
 manifest.json      {"format": 1}
 users.json         sorted by id
 themes.json        sorted by id (includes synopses)

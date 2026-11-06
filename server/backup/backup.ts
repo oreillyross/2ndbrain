@@ -85,6 +85,9 @@ export function writeSnapshot(dir: string, s: Snapshot) {
   mkdirSync(dir, { recursive: true });
   rmSync(join(dir, "notes"), { recursive: true, force: true });
   mkdirSync(join(dir, "notes"));
+  // Note content is stored byte for byte; stop git (e.g. core.autocrlf on
+  // Windows) from rewriting line endings in a cloned backup repo.
+  writeFileSync(join(dir, ".gitattributes"), "* -text\n");
   writeFileSync(join(dir, "manifest.json"), json({ format: FORMAT_VERSION }));
   writeFileSync(join(dir, "users.json"), json(s.users));
   writeFileSync(join(dir, "themes.json"), json(s.themes));

@@ -87,6 +87,7 @@ describe("note markdown format", () => {
 
   it("rejects broken files", () => {
     expect(() => parseNoteMarkdown("no frontmatter")).toThrow(/frontmatter/);
+    expect(() => parseNoteMarkdown("---\r\nid: \"x\"\r\n---\r\n")).toThrow(/autocrlf/);
     expect(() => parseNoteMarkdown("---\nid: \"x\"\n")).toThrow(/unterminated/);
     expect(() => parseNoteMarkdown("---\nid: \"x\"\n---\n")).toThrow(/missing rid/);
   });
@@ -120,6 +121,7 @@ describe("backup export / restore", () => {
       /\n---\nno trailing newline$/,
     );
     expect(readFileSync(join(dir, "README.md"), "utf8")).toBe("mine\n");
+    expect(readFileSync(join(dir, ".gitattributes"), "utf8")).toBe("* -text\n");
   });
 
   it("drops notes deleted since the last export", async () => {

@@ -59,6 +59,11 @@ export function noteToMarkdown(n: NoteRow): string {
 }
 
 export function parseNoteMarkdown(text: string, source = "note"): NoteRow {
+  if (text.startsWith("---\r\n")) {
+    throw new Error(
+      `${source}: CRLF line endings; git converted the file. Re-clone with core.autocrlf=false`,
+    );
+  }
   if (!text.startsWith("---\n")) throw new Error(`${source}: missing frontmatter`);
   const end = text.indexOf("\n---\n", 3);
   if (end === -1) throw new Error(`${source}: unterminated frontmatter`);
