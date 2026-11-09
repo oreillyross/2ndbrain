@@ -4,6 +4,7 @@ Purpose: a fast, minimal, browser-based note system for thinking clarity, not fe
 
 The migration plan lives in `KICKOFF.md`. Read it before changing anything structural. Decisions not covered there are recorded in `docs/decisions.md`.
 
+explain things in ASD-STE100, a controlled vocabulary originally designed for aircraft maintenance manuals, to strip out unnecessary words.
 ---
 
 # Philosophy
