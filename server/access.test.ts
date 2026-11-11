@@ -73,6 +73,11 @@ describe("Access JWT middleware", () => {
     expect(res.status).toBe(200);
   });
 
+  it("accepts TEAM_DOMAIN written as a bare hostname", async () => {
+    const env = prodEnv({ TEAM_DOMAIN: "team.cloudflareaccess.com/" });
+    expect((await get(env, await sign())).status).toBe(200);
+  });
+
   it("rejects a missing JWT in production", async () => {
     expect((await get(prodEnv())).status).toBe(401);
   });

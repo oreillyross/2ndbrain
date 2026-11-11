@@ -17,6 +17,15 @@ function remoteJwks(teamDomain: string): JWTVerifyGetKey {
   return jwks;
 }
 
+/**
+ * The Access issuer is always `https://<team>.cloudflareaccess.com`. Accept the
+ * setting with or without the scheme and with or without a trailing slash.
+ */
+export function teamOrigin(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 export function parseAllowedEmails(raw: string | undefined): Set<string> {
   return new Set(
     (raw ?? "")
@@ -57,7 +66,8 @@ export function accessAuth(options: Options = {}) {
       return next();
     }
 
-    const { TEAM_DOMAIN, POLICY_AUD } = c.env;
+    const { POLICY_AUD } = c.env;
+    const TEAM_DOMAIN = c.env.TEAM_DOMAIN?.trim() ? teamOrigin(c.env.TEAM_DOMAIN) : "";
     const allowed = parseAllowedEmails(c.env.ALLOWED_EMAILS);
     if (!TEAM_DOMAIN || !POLICY_AUD || allowed.size === 0) {
       console.error("access: TEAM_DOMAIN, POLICY_AUD or ALLOWED_EMAILS unset");
@@ -73,7 +83,7 @@ export function accessAuth(options: Options = {}) {
         token,
         options.jwks ?? remoteJwks(TEAM_DOMAIN),
         {
-          issuer: TEAM_DOMAIN.replace(/\/+$/, ""),
+          issuer: TEAM_DOMAIN,
           audience: POLICY_AUD,
           algorithms: ["RS256"],
         },
