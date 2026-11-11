@@ -75,7 +75,10 @@ export function accessAuth(options: Options = {}) {
     }
 
     const token = c.req.header(ACCESS_JWT_HEADER);
-    if (!token) return c.json({ error: "unauthorized" }, 401);
+    if (!token) {
+      console.warn(`access: no ${ACCESS_JWT_HEADER} header (is Access in front of this hostname?)`);
+      return c.json({ error: "unauthorized" }, 401);
+    }
 
     let email: unknown;
     try {
@@ -89,11 +92,15 @@ export function accessAuth(options: Options = {}) {
         },
       );
       email = payload.email;
-    } catch {
+    } catch (err) {
+      // Reason only (e.g. unexpected "aud" claim value); never the token.
+      const e = err as { code?: string; message?: string };
+      console.warn(`access: token rejected: ${e.code ?? "error"}: ${e.message ?? ""}`);
       return c.json({ error: "unauthorized" }, 401);
     }
 
     if (typeof email !== "string" || !allowed.has(email.toLowerCase())) {
+      console.warn("access: token valid but email is not in ALLOWED_EMAILS");
       return c.json({ error: "forbidden" }, 403);
     }
 
